@@ -465,7 +465,6 @@ const handleAddToWishlist = async () => {
               className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-2 rounded-lg font-semibold hover:bg-indigo-600 transition-colors duration-200 cursor-pointer"
             >
               <ShoppingCart className="w-4 h-4" />
-              Add
             </button>
           </div>
         </div>
