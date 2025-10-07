@@ -96,8 +96,8 @@ const fetchCounts = useCallback(async () => {
     };
 
     const [wishlistRes, cartRes] = await Promise.all([
-      fetch(`http://localhost:3001/api/wishlist/${user.id}`, { headers }),
-      fetch(`http://localhost:3001/api/cart/${user.id}`, { headers }),
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/wishlist/${user.id}`, { headers }),
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cart/${user.id}`, { headers }),
     ]);
 
     if (wishlistRes.ok) {

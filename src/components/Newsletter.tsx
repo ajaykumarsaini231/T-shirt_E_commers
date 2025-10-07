@@ -53,7 +53,7 @@ export default function Newsletter() {
         {/* Right Form */}
         <form
           onSubmit={handleSubmit}
-          className="flex flex-col sm:flex-row w-full md:w-auto rounded-md overflow-hidden shadow-md"
+          className="flex justify-center flex-col sm:flex-row w-full md:w-auto rounded-md overflow-hidden shadow-md"
         >
           <input
             type="email"

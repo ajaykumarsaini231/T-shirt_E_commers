@@ -27,23 +27,44 @@ const CheckoutPage = () => {
   const router = useRouter();
 
   // ✅ Fetch cart data
-  const fetchCart = async () => {
-    try {
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      if (!user.id) {
-        toast.error("Please login first!");
-        router.push("/login");
-        return;
-      }
+  // const fetchCart = async () => {
+  //   try {
+  //     const user = JSON.parse(localStorage.getItem("user") || "{}");
+  //     if (!user.id) {
+  //       toast.error("Please login first!");
+  //       router.push("/login");
+  //       return;
+  //     }
 
-      const res = await apiClient.get(`/api/cart/${user.id}`);
-      const data = await res.json();
-      setCart(data);
-    } catch (err) {
-      console.error("❌ Error fetching cart:", err);
-      toast.error("Failed to load your cart");
+  //     const res = await apiClient.get(`/api/cart/${user.id}`);
+  //     const data = await res.json();
+  //     setCart(data);
+  //   } catch (err) {
+  //     console.error("❌ Error fetching cart:", err);
+  //     toast.error("Failed to load your cart");
+  //   }
+  // };
+
+  const fetchCart = async () => {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+    if (!user.id) {
+      toast.error("Please login first!");
+      router.push("/login");
+      return;
     }
-  };
+
+    const res = await apiClient.get(`/api/cart/${user.id}`);
+    const data = await res.json();
+    console.log("🧾 Cart response:", data);
+
+    // ✅ normalize
+    setCart(Array.isArray(data) ? data : data.cart || data.items || []);
+  } catch (err) {
+    console.error("❌ Error fetching cart:", err);
+    toast.error("Failed to load your cart");
+  }
+};
 
   // ✅ Fetch user profile and auto-fill adress fields
   const fetchUserProfile = async () => {
@@ -202,112 +223,107 @@ const CheckoutPage = () => {
 
   return (
     <div className="bg-white">
-      <SectionTitle title="Checkout" path="Home | Cart | Checkout" />
-      <main className="mx-auto max-w-7xl px-4 py-10 grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* 🧾 Checkout Form */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Shipping Information</h2>
-          <div className="space-y-4">
-            {[
-              { label: "Name", key: "name" },
-              { label: "Lastname", key: "lastname" },
-              { label: "Phone", key: "phone" },
-              { label: "Email", key: "email" },
-              { label: "Company", key: "company" },
-              { label: "adress", key: "adress" },
-              { label: "Apartment", key: "apartment" },
-              { label: "City", key: "city" },
-              { label: "Country", key: "country" },
-              { label: "Postal Code", key: "postalCode" },
-            ].map((field) => (
-              <div key={field.key}>
-                <label className="block text-sm font-medium text-gray-700">
-                  {field.label} *
-                </label>
-                <input
-                  type="text"
-                  className="w-full mt-1 p-2 border rounded-lg"
-                  value={form[field.key as keyof typeof form]}
-                  onChange={(e) =>
-                    setForm({ ...form, [field.key]: e.target.value })
-                  }
-                  disabled={isSubmitting}
-                />
+  <SectionTitle title="Checkout" path="Home | Cart | Checkout" />
+  <main className="mx-auto max-w-7xl px-4 py-10 grid grid-cols-1 lg:grid-cols-2 gap-12">
+    
+    {/* 🛒 Order Summary FIRST */}
+    <div>
+      <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+      <div className="bg-gray-50 p-6 rounded-lg shadow">
+        {cart.length === 0 ? (
+          <p className="text-gray-600">Your cart is empty</p>
+        ) : (
+          <>
+            <ul className="divide-y divide-gray-200">
+              {cart.map((item) => (
+                <li key={item.product.id} className="flex py-4 items-center">
+                  <Image
+                    src={`${item.product.mainImage}`}
+                    alt={item.product.title}
+                    width={60}
+                    height={60}
+                    className="rounded object-cover"
+                  />
+                  <div className="ml-4 flex-1">
+                    <p className="font-medium">{item.product.title}</p>
+                    <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                  </div>
+                  <p className="font-semibold text-indigo-600">
+                    ₹{item.product.price}
+                  </p>
+                </li>
+              ))}
+            </ul>
+
+            <div className="border-t mt-4 pt-4 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Subtotal:</span>
+                <span>₹{total.toFixed(2)}</span>
               </div>
-            ))}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Order Notes
-              </label>
-              <textarea
-                className="w-full mt-1 p-2 border rounded-lg"
-                rows={3}
-                value={form.orderNotice}
-                onChange={(e) =>
-                  setForm({ ...form, orderNotice: e.target.value })
-                }
-                disabled={isSubmitting}
-              />
+              <div className="flex justify-between font-bold text-lg">
+                <span>Total:</span>
+                <span>₹{total.toFixed(2)}</span>
+              </div>
             </div>
-
-            <button
-              onClick={handleCheckout}
-              disabled={isSubmitting}
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-400"
-            >
-              {isSubmitting ? "Processing..." : "Place Order"}
-            </button>
-          </div>
-        </div>
-
-        {/* 🛒 Order Summary */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-          <div className="bg-gray-50 p-6 rounded-lg shadow">
-            {cart.length === 0 ? (
-              <p className="text-gray-600">Your cart is empty</p>
-            ) : (
-              <>
-                <ul className="divide-y divide-gray-200">
-                  {cart.map((item) => (
-                    <li key={item.product.id} className="flex py-4 items-center">
-                      <Image
-                        src={`${process.env.NEXT_PUBLIC_API_URL}/${item.product.mainImage}`}
-                        alt={item.product.title}
-                        width={60}
-                        height={60}
-                        className="rounded object-cover"
-                      />
-                      <div className="ml-4 flex-1">
-                        <p className="font-medium">{item.product.title}</p>
-                        <p className="text-sm text-gray-500">
-                          Qty: {item.quantity}
-                        </p>
-                      </div>
-                      <p className="font-semibold text-indigo-600">
-                        ₹{item.product.price}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="border-t mt-4 pt-4 space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Subtotal:</span>
-                    <span>₹{total.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between font-bold text-lg">
-                    <span>Total:</span>
-                    <span>₹{total.toFixed(2)}</span>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </main>
+          </>
+        )}
+      </div>
     </div>
+
+    {/* 🧾 Shipping Information SECOND */}
+    <div>
+      <h2 className="text-xl font-semibold mb-4">Shipping Information</h2>
+      <div className="space-y-4">
+        {[
+          { label: "Name", key: "name" },
+          { label: "Lastname", key: "lastname" },
+          { label: "Phone", key: "phone" },
+          { label: "Email", key: "email" },
+          { label: "Company", key: "company" },
+          { label: "Address", key: "adress" },
+          { label: "Apartment", key: "apartment" },
+          { label: "City", key: "city" },
+          { label: "Country", key: "country" },
+          { label: "Postal Code", key: "postalCode" },
+        ].map((field) => (
+          <div key={field.key}>
+            <label className="block text-sm font-medium text-gray-700">
+              {field.label} *
+            </label>
+            <input
+              type="text"
+              className="w-full mt-1 p-2 border rounded-lg"
+              value={form[field.key as keyof typeof form]}
+              onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+              disabled={isSubmitting}
+            />
+          </div>
+        ))}
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            Order Notes
+          </label>
+          <textarea
+            className="w-full mt-1 p-2 border rounded-lg"
+            rows={3}
+            value={form.orderNotice}
+            onChange={(e) => setForm({ ...form, orderNotice: e.target.value })}
+            disabled={isSubmitting}
+          />
+        </div>
+
+        <button
+          onClick={handleCheckout}
+          disabled={isSubmitting}
+          className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition disabled:bg-gray-400"
+        >
+          {isSubmitting ? "Processing..." : "Place Order"}
+        </button>
+      </div>
+    </div>
+  </main>
+</div>
   );
 };
 
