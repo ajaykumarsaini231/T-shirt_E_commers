@@ -22,9 +22,8 @@ const DashboardUsers = () => {
       try {
         const res = await apiClient.get("/api/users");
 
-        // ✅ Handle both Axios and Fetch responses
-        const data =
-          res.data || (await res.json?.()) || {}; // If axios, use res.data; if fetch, call res.json()
+        // ✅ parse JSON body from fetch Response
+        const data = await res.json();
 
         console.log("📦 API response:", data);
 
@@ -35,12 +34,7 @@ const DashboardUsers = () => {
           ? data.users
           : [];
 
-        if (!Array.isArray(usersArray)) {
-          console.error("❌ Invalid data format from /api/users");
-          setUsers([]);
-        } else {
-          setUsers(usersArray);
-        }
+        setUsers(usersArray);
       } catch (error) {
         console.error("❌ Failed to fetch users:", error);
         setUsers([]);
@@ -81,7 +75,6 @@ const DashboardUsers = () => {
 
         <div className="xl:ml-5 w-full max-xl:mt-5 overflow-auto h-[80vh]">
           <table className="table table-md table-pin-cols w-full">
-            {/* head */}
             <thead>
               <tr>
                 <th>
@@ -125,7 +118,6 @@ const DashboardUsers = () => {
               )}
             </tbody>
 
-            {/* foot */}
             <tfoot>
               <tr>
                 <th></th>

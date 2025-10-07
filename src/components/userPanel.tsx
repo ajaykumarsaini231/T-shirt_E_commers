@@ -4,7 +4,23 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
-export default function UserPanel({ user, isOpen, onClose }) {
+
+type User = {
+  id: string;
+  name: string;
+  email?: string;
+  avatar?: string;
+  photoUrl?: string; // ✅ Add this line
+};
+
+
+interface UserPanelProps {
+  user: User;
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function UserPanel({ user, isOpen, onClose }: UserPanelProps) {
   const router = useRouter();
 
 const handleLogout = async () => {

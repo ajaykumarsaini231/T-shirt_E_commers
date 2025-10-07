@@ -8,6 +8,14 @@ import Cookies from "js-cookie";
 import { AuthContext } from "@/app/context/Authprovider";
 import { jwtDecode } from "jwt-decode"; // ✅ correct import
 
+export interface User {
+  id?: string;          // ✅ add this line (optional makes it safer)
+  name: string;
+  email: string;
+  photoUrl?: string;
+}
+
+
 const SignInPage: React.FC = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [loading, setLoading] = useState(false);

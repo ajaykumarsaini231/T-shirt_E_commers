@@ -1,10 +1,10 @@
 "use client";
 
 // *********************
-// Role of the component: Displays all orders on admin dashboard page
-// Name of the component: AdminOrders.tsx
+// Role: Displays all orders on the admin dashboard
+// Name: AdminOrders.tsx
 // Developer: Aleksandar Kuzmanovic (updated by GPT-5)
-// Version: 1.1 (fixed API + error handling)
+// Version: 1.3 (fixed for fetch-based apiClient)
 // *********************
 
 import React, { useEffect, useState } from "react";
@@ -23,20 +23,31 @@ interface Order {
   dateTime: string;
 }
 
+interface OrdersResponse {
+  orders: Order[];
+}
+
 // -----------------------------
 // 🧩 Component
 // -----------------------------
-const AdminOrders = () => {
+const AdminOrders: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch orders from backend
   useEffect(() => {
     const fetchOrders = async () => {
       try {
+        // ✅ Your apiClient returns a native fetch Response
         const response = await apiClient.get("/admin/orders");
-        setOrders(response.data?.orders || []); // Safe access
+
+        if (!response.ok) {
+          throw new Error(`Server error: ${response.status}`);
+        }
+
+        // ✅ Parse JSON response
+        const data: OrdersResponse = await response.json();
+        setOrders(data.orders || []);
       } catch (err: any) {
         console.error("❌ Failed to fetch admin orders:", err);
         setError(err?.message || "Failed to load orders");
@@ -44,6 +55,7 @@ const AdminOrders = () => {
         setLoading(false);
       }
     };
+
     fetchOrders();
   }, []);
 
@@ -53,7 +65,9 @@ const AdminOrders = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-[60vh]">
-        <p className="text-lg text-gray-500 animate-pulse">Loading orders...</p>
+        <p className="text-lg text-gray-500 animate-pulse">
+          Loading orders...
+        </p>
       </div>
     );
   }

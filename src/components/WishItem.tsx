@@ -1,67 +1,67 @@
-// *********************
-// Role of the component: Wishlist item component for wishlist page
-// Name of the component: WishItem.tsx
-// Developer: Aleksandar Kuzmanovic
-// Version: 1.0
-// Component call: <WishItem id={id} title={title} price={price} image={image} slug={slug} stockAvailabillity={stockAvailabillity} />
-// Input parameters: ProductInWishlist interface
-// Output: single wishlist item on the wishlist page
-// *********************
-
 "use client";
 import { useWishlistStore } from "@/app/_zustand/wishlistStore";
-// import { revalidatePath } from "next/cache";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { FaHeartCrack } from "react-icons/fa6";
-// import { deleteWishItem } from "@/app/actions";
 import { useSession } from "next-auth/react";
 import apiClient from "@/lib/api";
 import { sanitize } from "@/lib/sanitize";
+import { ProductInWishlist as BaseWishlistProduct } from "@/app/_zustand/wishlistStore";
 
-interface wishItemStateTrackers {
-  setIsWishItemDeleted: any;
+// ✅ Extend base wishlist product for UI-specific props
+interface ProductInWishlist extends BaseWishlistProduct {
+  slug?: string;
+  stockAvailabillity?: boolean;
 }
 
-const WishItem = ({
+const WishItem: React.FC<ProductInWishlist> = ({
   id,
   title,
   price,
   image,
   slug,
   stockAvailabillity,
-}: ProductInWishlist) => {
-  const { data: session, status } = useSession();
+}) => {
+  const { data: session } = useSession();
   const { removeFromWishlist } = useWishlistStore();
   const router = useRouter();
   const [userId, setUserId] = useState<string>();
 
-  const openProduct = (slug: string): void => {
-    router.push(`/product/${slug}`);
+  // ✅ Open product page
+  const openProduct = (slug?: string): void => {
+    if (slug) router.push(`/product/${slug}`);
   };
 
+  // ✅ Fetch user by email
   const getUserByEmail = async () => {
     if (session?.user?.email) {
-      apiClient.get(`/api/users/email/${session?.user?.email}`, {
-        cache: "no-store",
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          setUserId(data?.id);
+      try {
+        const response = await apiClient.get(`/api/users/email/${session.user.email}`, {
+          cache: "no-store",
         });
+        const data = await response.json();
+        setUserId(data?.id);
+      } catch (err) {
+        console.error("Failed to fetch user:", err);
+      }
     }
   };
 
+  // ✅ Delete wishlist item
   const deleteItemFromWishlist = async (productId: string) => {
-    if (userId) {
-      apiClient.delete(`/api/wishlist/${userId}/${productId}`, {method: "DELETE"}).then(
-        (response) => {
-          removeFromWishlist(productId);
-          toast.success("Item removed from your wishlist");
-        }
-      );
+    if (!userId) return;
+
+    try {
+      await apiClient.delete(`/api/wishlist/${userId}/${productId}`, {
+        method: "DELETE",
+      });
+      removeFromWishlist(productId);
+      toast.success("Item removed from your wishlist");
+    } catch (err) {
+      console.error("Failed to delete item:", err);
+      toast.error("Failed to remove item");
     }
   };
 
@@ -77,6 +77,7 @@ const WishItem = ({
       >
         {id}
       </th>
+
       <th>
         <div className="w-12 h-12 mx-auto" onClick={() => openProduct(slug)}>
           <Image
@@ -88,12 +89,14 @@ const WishItem = ({
           />
         </div>
       </th>
+
       <td
         className="text-black text-sm text-center"
         onClick={() => openProduct(slug)}
       >
         {sanitize(title)}
       </td>
+
       <td
         className="text-black text-sm text-center"
         onClick={() => openProduct(slug)}
@@ -104,15 +107,15 @@ const WishItem = ({
           <span className="text-error">Out of stock</span>
         )}
       </td>
+
       <td>
-        <button className="btn btn-xs bg-blue-500 text-white hover:text-blue-500 border border-blue-500 hover:bg-white hover:text-blue-500 text-sm">
+        <button
+          type="button"
+          className="btn btn-xs bg-blue-500 text-white hover:text-blue-500 border border-blue-500 hover:bg-white text-sm flex items-center gap-1"
+          onClick={() => deleteItemFromWishlist(id)}
+        >
           <FaHeartCrack />
-          <span
-            className="max-sm:hidden"
-            onClick={() => deleteItemFromWishlist(id)}
-          >
-            remove from the wishlist
-          </span>
+          <span className="max-sm:hidden">Remove</span>
         </button>
       </td>
     </tr>

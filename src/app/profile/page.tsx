@@ -388,7 +388,7 @@ interface Address {
   id: string;
   name: string;
   lastname: string;
-  address: string;
+  adress: string;
   city: string;
   postalCode: string;
   country: string;
@@ -523,7 +523,7 @@ const AddressesContent = () => {
     setForm({
       name: addr.name,
       lastname: addr.lastname,
-      address: addr.address,
+      address: addr.adress,
       city: addr.city,
       postalCode: addr.postalCode,
       country: addr.country,
@@ -694,7 +694,7 @@ const AddressesContent = () => {
               <p className="font-bold text-lg mb-1">
                 {addr.name} {addr.lastname}
               </p>
-              <p className="text-gray-600 text-sm mb-2">{addr.address}</p>
+              <p className="text-gray-600 text-sm mb-2">{addr.adress}</p>
               <p className="text-gray-600 text-sm">
                 {addr.city}, {addr.postalCode}
               </p>
@@ -879,20 +879,28 @@ const UserProfilePage = () => {
 
           // The API returns all orders. We need to extract unique addresses.
           const addressMap = new Map<string, Address>();
-          ordersData.orders.forEach((order: any) => {
-            const fullAddress =
-              `${order.adress}, ${order.city}, ${order.postalCode}, ${order.country}`.toLowerCase();
-            if (!addressMap.has(fullAddress)) {
-              addressMap.set(fullAddress, {
-                name: order.name,
-                lastname: order.lastname,
-                adress: order.adress,
-                city: order.city,
-                country: order.country,
-                postalCode: order.postalCode,
-              });
-            }
-          });
+
+ordersData.orders.forEach((order: any) => {
+  const fullAddress = `${order.adress}, ${order.city}, ${order.postalCode}, ${order.country}`.toLowerCase();
+
+  if (!addressMap.has(fullAddress)) {
+    addressMap.set(fullAddress, {
+      id: order.id || crypto.randomUUID(), // ✅ fallback id
+      name: order.name,
+      lastname: order.lastname,
+      adress: order.adress,
+      city: order.city,
+      country: order.country,
+      postalCode: order.postalCode,
+      phone: order.phone || "",
+      isDefault: false,
+      userId: order.userId || "unknown",
+      createdAt: order.createdAt || new Date().toISOString(),
+      updatedAt: order.updatedAt || new Date().toISOString(),
+    });
+  }
+});
+
 
           setAddresses(Array.from(addressMap.values()));
         } catch (err: any) {
@@ -914,11 +922,7 @@ const UserProfilePage = () => {
         return <OrdersContent />;
       case "addresses":
         return (
-          <AddressesContent
-            addresses={addresses}
-            isLoading={isLoading}
-            error={error}
-          />
+          <AddressesContent  />
         );
       case "account":
         return <AccountDetailsContent />;
@@ -949,8 +953,14 @@ const UserProfilePage = () => {
       }
     }
   }, []);
+interface NavLinkProps {
+  tabName: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+}
 
-  const NavLink = ({ tabName, icon: Icon, label }) => (
+const NavLink: React.FC<NavLinkProps> = ({ tabName, icon: Icon, label }) => (
+
     <button
       onClick={() => setActiveTab(tabName)}
       className={`flex items-center w-full text-left px-4 py-3 text-sm font-medium rounded-md transition-colors ${

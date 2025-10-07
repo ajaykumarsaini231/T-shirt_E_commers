@@ -8,6 +8,8 @@
 // Output: products table
 // *********************
 
+
+
 "use client";
 import { nanoid } from "nanoid";
 import Image from "next/image";
@@ -16,6 +18,21 @@ import React, { useEffect, useState } from "react";
 import CustomButton from "./CustomButton";
 import apiClient from "@/lib/api";
 import { sanitize } from "@/lib/sanitize";
+
+interface Product {
+  _id?: string;
+  id?: string;
+  title: string;
+  name?: string;
+  description?: string;
+  price: number;
+  manufacturer: string;
+  size: string;
+  rating?: number;
+  inStock?: number;
+  categoryId?: string;
+  mainImage: string;
+}
 
 const DashboardProductTable = () => {
   const [products, setProducts] = useState<Product[]>([]);

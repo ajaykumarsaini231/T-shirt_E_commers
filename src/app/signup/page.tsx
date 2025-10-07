@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
+import Cookies from "js-cookie";
+
 
 const SignupPage: React.FC = () => {
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });

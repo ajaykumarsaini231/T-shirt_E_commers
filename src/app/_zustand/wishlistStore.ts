@@ -2,15 +2,18 @@ import { create } from "zustand";
 
 export type ProductInWishlist = {
   id: string;
-  name: string;
+  title: string;   // ✅ Use only title
   price: number;
   image: string;
+   slug?: string;
+  stockAvailabillity?: boolean;
 };
 
 export type State = {
   wishlist: ProductInWishlist[];
   wishQuantity: number;
 };
+
 
 export type Actions = {
   addToWishlist: (product: ProductInWishlist) => void;
@@ -25,30 +28,29 @@ export const useWishlistStore = create<State & Actions>((set) => ({
 
   addToWishlist: (product) => {
     set((state) => {
-      const productInWishlist = state.wishlist.find(
-        (item) => product.id === item.id
-      );
+      const exists = state.wishlist.find((item) => item.id === product.id);
 
-      if (!productInWishlist) {
+      if (!exists) {
+        const updated = [...state.wishlist, product];
         return {
-          wishlist: [...state.wishlist, product],
-          wishQuantity: state.wishlist.length + 1,
-        };
-      } else {
-        return {
-          wishlist: [...state.wishlist],
-          wishQuantity: state.wishlist.length,
+          wishlist: updated,
+          wishQuantity: updated.length,
         };
       }
+
+      return {
+        wishlist: state.wishlist,
+        wishQuantity: state.wishlist.length,
+      };
     });
   },
 
   removeFromWishlist: (id) => {
     set((state) => {
-      const newWishlist = state.wishlist.filter((item) => item.id !== id);
+      const updated = state.wishlist.filter((item) => item.id !== id);
       return {
-        wishlist: newWishlist,
-        wishQuantity: newWishlist.length,
+        wishlist: updated,
+        wishQuantity: updated.length,
       };
     });
   },
@@ -60,9 +62,8 @@ export const useWishlistStore = create<State & Actions>((set) => ({
     }));
   },
 
-  clearWishlist: () =>
-    set(() => ({
-      wishlist: [],
-      wishQuantity: 0,
-    })),
+  clearWishlist: () => ({
+    wishlist: [],
+    wishQuantity: 0,
+  }),
 }));

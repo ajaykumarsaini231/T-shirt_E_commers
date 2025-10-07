@@ -8,34 +8,25 @@ import { useEffect } from "react";
 export const WishlistModule = () => {
   const { wishlist, setWishlist } = useWishlistStore();
 
-  const getWishlistByUserId = async (id: string) => {
-    const response = await apiClient.get(`/api/wishlist/${id}`, {
-      cache: "no-store",
-    });
-    const wishlist = await response.json();
+ const getWishlistByUserId = async (id: string) => {
+  const response = await apiClient.get(`/api/wishlist/${id}`, {
+    cache: "no-store",
+  });
+  const wishlist = await response.json();
 
-    const productArray: {
-      id: string;
-      title: string;
-      price: number;
-      image: string;
-      slug: string;
-      stockAvailabillity: number;
-    }[] = [];
+  const productArray = wishlist.map((item: any) => ({
+    id: item?.product?.id,
+    title: item?.product?.title,
+    price: item?.product?.price,
+    image: item?.product?.mainImage,
+    slug: item?.product?.slug,
+    // ✅ Convert number → boolean safely
+    stockAvailabillity: Boolean(item?.product?.inStock),
+  }));
 
-    wishlist.map((item: any) =>
-      productArray.push({
-        id: item?.product?.id,
-        title: item?.product?.title,
-        price: item?.product?.price,
-        image: item?.product?.mainImage,
-        slug: item?.product?.slug,
-        stockAvailabillity: item?.product?.inStock,
-      })
-    );
+  setWishlist(productArray);
+};
 
-    setWishlist(productArray);
-  };
 
   // Example: get current user via your API auth
   const getCurrentUser = async () => {

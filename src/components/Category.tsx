@@ -8,24 +8,25 @@ import { Heart, ShoppingCart } from "lucide-react";
 import toast from "react-hot-toast";
 
 // --- Mock Backend Data (fallback ke liye) ---
-const mockCategories = [
-  { id: "all", name: "All Products" },
-  { id: "ace7e781-5886-4be3-b5fe-9bc9f301f3a1", name: "Animated 3D Posters" },
-];
+interface Category {
+  id: string;
+  name: string;
+}
 
-const mockProducts = [
-  {
-    id: "1",
-    title: "Sample Product",
-    description: "This is a mock product.",
-    price: 19.99,
-    mainImage: "https://placehold.co/600x400",
-    categoryId: "ace7e781-5886-4be3-b5fe-9bc9f301f3a1",
-  },
-];
 
-// --- UI Components ---
-const CategoryPill = ({ category, isSelected, onClick }) => {
+interface Category {
+  id: string;
+  name: string;
+}
+
+interface CategoryPillProps {
+  category: Category;
+  isSelected: boolean;
+  onClick: (id: string) => void;
+}
+
+
+const CategoryPill: React.FC<CategoryPillProps> = ({ category, isSelected, onClick }) => {
   const baseClasses =
     "px-4 py-2 rounded-full font-semibold text-sm md:text-base transition-all duration-300 ease-in-out cursor-pointer shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2";
   const selectedClasses = "bg-indigo-600 text-white shadow-lg scale-105";
@@ -44,8 +45,50 @@ const CategoryPill = ({ category, isSelected, onClick }) => {
   );
 };
 
-// --- Product Card ---
-const ProductCard = ({ product }) => {
+
+
+interface Product {
+  _id?: string;
+  id?: string;
+  title: string;
+  name?: string;
+  description?: string;
+  price: number;
+  manufacturer: string;
+  size: string;
+  rating?: number;
+  inStock?: number;
+  categoryId?: string;
+  mainImage: string;
+}
+// ✅ Define props type for your ProductCard component
+type ProductCardProps = {
+  product: Product;
+};
+
+
+const mockCategories: Category[] = [
+  { id: "all", name: "All Products" },
+  { id: "1", name: "Electronics" },
+  { id: "2", name: "Clothing" },
+];
+
+const mockProducts: Product[] = [
+  {
+    id: "1",
+    title: "Smartphone",
+    manufacturer: "TechCorp",
+    size: "6.1 inch",
+    price: 799,
+    rating: 4.5,
+    inStock: 12,
+    categoryId: "1",
+    mainImage: "/phone.jpg",
+  },
+];
+
+/* 🔹 ProductCard component (inline in same file) */
+const ProductCard = ({ product }: ProductCardProps) => {
   const router = useRouter();
   const { addToCart } = useProductStore();
   const { addToWishlist } = useWishlistStore();
@@ -66,8 +109,6 @@ const isLoggedIn = !!token;
 console.log("🛒 Sending cart request:", { userId, productId: product._id || product.id });
 
   const imageUrl = `${product.mainImage}`;
-  console.log(imageUrl)
-
   // --- Add to Cart ---
  // --- Add to Cart ---
 const handleAddToCart = async () => {
@@ -100,7 +141,7 @@ const handleAddToCart = async () => {
     const data = await res.json();
 
     addToCart({
-      id: product._id || product.id,
+      id: (product._id || product.id || "").toString(),
       title: product.title,
       price: product.price,
       image: product.mainImage,
@@ -156,7 +197,7 @@ const handleAddToWishlist = async () => {
     const data = await res.json();
 
     addToWishlist({
-      id: product._id || product.id,
+      id: (product._id || product.id || "").toString(),
       title: product.title,
       price: product.price,
       image: product.mainImage,
@@ -223,15 +264,16 @@ const handleAddToWishlist = async () => {
   );
 };
 
+
 // --- Main Page ---
 const CategoryPage = () => {
-  const [categories, setCategories] = React.useState([]);
-  const [products, setProducts] = React.useState([]);
-  const [filteredProducts, setFilteredProducts] = React.useState([]);
+  const [categories, setCategories] = React.useState<Category[]>([]);
+  const [products, setProducts] = React.useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = React.useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = React.useState("all");
   const [loading, setLoading] = React.useState(true);
   const [isDropdownOpen, setIsDropdownOpen] = React.useState(false);
-  const dropdownRef = React.useRef(null);
+  const dropdownRef = React.useRef<HTMLDivElement | null>(null);
 
   const VISIBLE_CATEGORIES_COUNT = 5;
 
@@ -281,7 +323,7 @@ const CategoryPage = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [dropdownRef]);
 
-  const handleCategorySelect = async (categoryId) => {
+  const handleCategorySelect = async (categoryId: string) => {
     setSelectedCategory(categoryId);
     if (categoryId === "all") {
       setFilteredProducts(products);
@@ -300,7 +342,7 @@ const CategoryPage = () => {
     }
   };
 
-  const handleDropdownCategorySelect = (categoryId) => {
+  const handleDropdownCategorySelect = (categoryId: string) => {
     handleCategorySelect(categoryId);
     setIsDropdownOpen(false);
   };

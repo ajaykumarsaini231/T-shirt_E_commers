@@ -1,42 +1,28 @@
-// *********************
-// Role of the component: Quantity input for incrementing and decrementing product quantity on the cart page
-// Name of the component: QuantityInputCart.tsx
-// Developer: Aleksandar Kuzmanovic
-// Version: 1.0
-// Component call: <QuantityInputCart product={product} />
-// Input parameters: { product: ProductInCart }
-// Output: one number input and two buttons
-// *********************
-
 "use client";
 import { ProductInCart, useProductStore } from "@/app/_zustand/store";
 import React, { useState } from "react";
-import { FaPlus } from "react-icons/fa6";
-import { FaMinus } from "react-icons/fa6";
+import { FaPlus, FaMinus } from "react-icons/fa6";
 
-const QuantityInputCart = ({ product } : { product: ProductInCart }) => {
+const QuantityInputCart = ({ product }: { product: ProductInCart }) => {
   const [quantityCount, setQuantityCount] = useState<number>(product.amount);
-  const { updateCartAmount, calculateTotals } = useProductStore();
+  const { updateCartAmount } = useProductStore(); // 🧩 removed calculateTotals
 
   const handleQuantityChange = (actionName: string): void => {
     if (actionName === "plus") {
-      setQuantityCount(() => quantityCount + 1);
-      updateCartAmount(product.id, quantityCount + 1);
-      calculateTotals();
-
-      
-    } else if (actionName === "minus" && quantityCount !== 1) {
-      setQuantityCount(() => quantityCount - 1);
-      updateCartAmount(product.id, quantityCount - 1);
-      calculateTotals();
+      const newCount = quantityCount + 1;
+      setQuantityCount(newCount);
+      updateCartAmount(product.id, newCount);
+    } else if (actionName === "minus" && quantityCount > 1) {
+      const newCount = quantityCount - 1;
+      setQuantityCount(newCount);
+      updateCartAmount(product.id, newCount);
     }
   };
 
   return (
     <div>
       <label htmlFor="Quantity" className="sr-only">
-        {" "}
-        Quantity{" "}
+        Quantity
       </label>
 
       <div className="flex items-center justify-center rounded border border-gray-200 w-32">
@@ -51,9 +37,9 @@ const QuantityInputCart = ({ product } : { product: ProductInCart }) => {
         <input
           type="number"
           id="Quantity"
-          disabled={true}
+          disabled
           value={quantityCount}
-          className="h-10 w-16 border-transparent text-center [-moz-appearance:_textfield] sm:text-sm [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none"
+          className="h-10 w-16 border-transparent text-center sm:text-sm [-moz-appearance:_textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
 
         <button

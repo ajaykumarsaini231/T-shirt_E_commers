@@ -7,6 +7,15 @@ import React, { useEffect, useState } from "react";
 import { formatCategoryName } from "../../../../utils/categoryFormating";
 import apiClient from "@/lib/api";
 
+type Category = {
+  id: string;
+  name: string;
+  image?: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 const DashboardCategory = () => {
   const [categories, setCategories] = useState<Category[]>([]);
 

@@ -27,6 +27,24 @@ interface OrderProduct {
   };
 }
 
+interface Order {
+  id: string;
+  adress: string;
+  apartment: string;
+  company: string;
+  dateTime: string;
+  email: string;
+  lastname: string;
+  name: string;
+  phone: string;
+  postalCode: string;
+  city: string;
+  country: string;
+  orderNotice?: string;
+  status: "processing" | "delivered" | "canceled";
+  total: number;
+}
+
 const AdminSingleOrder = () => {
   const [orderProducts, setOrderProducts] = useState<OrderProduct[]>();
   const [order, setOrder] = useState<Order>({

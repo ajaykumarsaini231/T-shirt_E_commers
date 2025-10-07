@@ -1,71 +1,56 @@
 "use client";
+
 import DashboardSidebar from "@/components/DashboardSidebar";
 import { isValidEmailAddressFormat } from "@/lib/utils";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { sanitizeFormData } from "@/lib/form-sanitize";
+import apiClient from "@/lib/api"; // ✅ use your Axios/fetch wrapper
 
 const DashboardCreateNewUser = () => {
-  const [userInput, setUserInput] = useState<{
-    email: string;
-    password: string;
-    role: string;
-  }>({
+  const [userInput, setUserInput] = useState({
     email: "",
     password: "",
     role: "user",
   });
 
   const addNewUser = async () => {
-    if (userInput.email === "" || userInput.password === "") {
+    const { email, password, role } = userInput;
+
+    // 🧩 Basic validation
+    if (!email || !password) {
       toast.error("You must enter all input values to add a user");
       return;
     }
 
-    // Sanitize form data before sending to API
-    const sanitizedUserInput = sanitizeFormData(userInput);
+    if (!isValidEmailAddressFormat(email)) {
+      toast.error("You entered an invalid email address format");
+      return;
+    }
 
-    if (
-      userInput.email.length > 3 &&
-      userInput.role.length > 0 &&
-      userInput.password.length > 0
-    ) {
-      if (!isValidEmailAddressFormat(userInput.email)) {
-        toast.error("You entered invalid email address format");
-        return;
-      }
+    if (password.length < 8) {
+      toast.error("Password must be at least 8 characters long");
+      return;
+    }
 
-      if (userInput.password.length > 7) {
-        const requestOptions: any = {
-          method: "post",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sanitizedUserInput),
-        };
-        ap(`/api/users`, requestOptions)
-          .then((response) => {
-            if(response.status === 201){
-              return response.json();
+    try {
+      // 🧼 Sanitize before sending
+      const sanitizedUserInput = sanitizeFormData({ email, password, role });
 
-            }else{
-              
-              throw Error("Error while creating user");
-            }
-          })
-          .then((data) => {
-            toast.success("User added successfully");
-            setUserInput({
-              email: "",
-              password: "",
-              role: "user",
-            });
-          }).catch(error => {
-            toast.error("Error while creating user");
-          });
+      // 📤 Send to backend
+      const response = await apiClient.post(`/api/users`, sanitizedUserInput, {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (response.status === 201) {
+        toast.success("User added successfully");
+        setUserInput({ email: "", password: "", role: "user" });
       } else {
-        toast.error("Password must be longer than 7 characters");
+        toast.error("Failed to create user");
       }
-    } else {
-      toast.error("You must enter all input values to add a user");
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      toast.error("An error occurred while creating the user");
     }
   };
 
@@ -74,6 +59,8 @@ const DashboardCreateNewUser = () => {
       <DashboardSidebar />
       <div className="flex flex-col gap-y-7 xl:pl-5 max-xl:px-5 w-full">
         <h1 className="text-3xl font-semibold">Add new user</h1>
+
+        {/* Email Field */}
         <div>
           <label className="form-control w-full max-w-xs">
             <div className="label">
@@ -90,6 +77,7 @@ const DashboardCreateNewUser = () => {
           </label>
         </div>
 
+        {/* Password Field */}
         <div>
           <label className="form-control w-full max-w-xs">
             <div className="label">
@@ -106,6 +94,7 @@ const DashboardCreateNewUser = () => {
           </label>
         </div>
 
+        {/* Role Selection */}
         <div>
           <label className="form-control w-full max-w-xs">
             <div className="label">
@@ -113,7 +102,7 @@ const DashboardCreateNewUser = () => {
             </div>
             <select
               className="select select-bordered"
-              defaultValue={userInput.role}
+              value={userInput.role}
               onChange={(e) =>
                 setUserInput({ ...userInput, role: e.target.value })
               }
@@ -124,11 +113,12 @@ const DashboardCreateNewUser = () => {
           </label>
         </div>
 
+        {/* Submit Button */}
         <div className="flex gap-x-2">
           <button
             type="button"
-            className="uppercase bg-blue-500 px-10 py-5 text-lg border border-black border-gray-300 font-bold text-white shadow-sm hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-2"
             onClick={addNewUser}
+            className="uppercase bg-blue-500 px-10 py-5 text-lg border border-gray-300 font-bold text-white shadow-sm hover:bg-blue-600 focus:ring-2"
           >
             Create user
           </button>

@@ -1,10 +1,11 @@
 "use client";
-import React, { useState } from "react";
+
+import React, { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-const OtpPage: React.FC = () => {
+function OtpContent() {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -24,8 +25,6 @@ const OtpPage: React.FC = () => {
         { headers: { "Content-Type": "application/json" } }
       );
 
-  
-
       if (res.data.success) {
         // ✅ Store token and user info
         localStorage.setItem("token", res.data.token);
@@ -34,13 +33,15 @@ const OtpPage: React.FC = () => {
           JSON.stringify({
             name: res.data.user.name,
             email: res.data.user.email,
-            photoUrl: res.data.user.photoUrl || "https://placehold.co/100x100/6366f1/white?text=U",
+            photoUrl:
+              res.data.user.photoUrl ||
+              "https://placehold.co/100x100/6366f1/white?text=U",
           })
         );
 
         toast.success(res.data.message || "OTP verified successfully!");
 
-        // ✅ Reload full page after verification
+        // ✅ Redirect to home
         setTimeout(() => {
           window.location.href = "/";
         }, 1200);
@@ -101,6 +102,12 @@ const OtpPage: React.FC = () => {
       </div>
     </div>
   );
-};
+}
 
-export default OtpPage;
+export default function OtpPage() {
+  return (
+    <Suspense fallback={<div className="text-center mt-20">Loading OTP page...</div>}>
+      <OtpContent />
+    </Suspense>
+  );
+}

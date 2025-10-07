@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 
 export async function requireAdmin() {
   try {
-    const cookieStore = cookies();
+    // ✅ Await cookies() — it now returns a Promise
+    const cookieStore = await cookies();
     const token = cookieStore.get("Authorization")?.value; // ✅ match backend cookie name
 
     if (!token) {
@@ -11,12 +12,12 @@ export async function requireAdmin() {
       redirect("/login");
     }
 
-    const res = await fetch("http://localhost:3001/api/auth/verify", {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify`, {
       method: "GET",
       headers: {
         Authorization: token, // ✅ backend already includes "Bearer"
       },
-      credentials: "include", // ✅ send cookies
+      credentials: "include",
       cache: "no-store",
     });
 

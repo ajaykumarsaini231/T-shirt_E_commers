@@ -27,6 +27,15 @@ const AddNewProduct = () => {
     slug: "",
     categoryId: "",
   });
+
+  type Category = {
+  id: string;
+  name: string;
+  image?: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
   const [categories, setCategories] = useState<Category[]>([]);
 
   const addProduct = async () => {

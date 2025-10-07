@@ -27,10 +27,37 @@ const getImageUrl = (path: string) => {
   return `${baseUrl}/${path.replace(/^\/+/, "")}`;
 };
 
+type Category = {
+  id: string;
+  name: string;
+  image?: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+type Product = {
+  id: string;
+  title: string;
+  slug: string;
+  price: number;
+  manufacturer: string;
+  description: string;
+  mainImage?: string;
+  categoryId: string;
+  inStock: number;
+};
+
+type OtherImages = {
+  id: string;
+  productId: string;
+  image: string;
+};
+
+
 const DashboardProductDetails = ({ params }: DashboardProductDetailsProps) => {
   const resolvedParams = use(params);
   const id = resolvedParams.id;
-
+ 
   const [product, setProduct] = useState<Product>();
   const [categories, setCategories] = useState<Category[]>();
   const [otherImages, setOtherImages] = useState<OtherImages[]>([]);

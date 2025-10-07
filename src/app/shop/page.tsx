@@ -21,14 +21,61 @@ const ProductSkeleton = () => (
 );
 
 // ---------------- Filter Sidebar ---------------
+  interface Product {
+    id: string;
+    title: string;
+    manufacturer: string;
+    size: string;
+    price: number;
+    rating?: number;
+    inStock?: number;
+    categoryId?: string;
+    mainImage: string; // ✅ Add this line
 
-const FilterSidebar = ({
+  }
+
+  // 🧩 Filters + FilterType definitions (keep them above the logic)
+  interface Filters {
+    brand: string[];
+    size: string[];
+    category: string[];
+    price: number;
+    rating: number | null;
+  }
+
+  type FilterType =
+    | "brand"
+    | "size"
+    | "category"
+    | "price"
+    | "rating"
+    | "__reset";
+
+export interface FilterSidebarProps {
+  filters: {
+    brand: string[];
+    size: string[];
+    category: string[];
+    price: number;
+    rating: number | null;
+  };
+ onFilterChange: (
+  type: FilterType,
+  value: string | number | null,
+  checked: boolean | number | null
+) => void | Promise<void>;
+  categories: { id: string; name: string }[];
+  collapsedOnMobile: boolean;
+  onToggleCollapse: () => void;
+}
+const FilterSidebar: React.FC<FilterSidebarProps> = ({
   filters,
   onFilterChange,
   categories,
   collapsedOnMobile,
   onToggleCollapse,
 }) => {
+
   const [open, setOpen] = React.useState({
     brand: true,
     size: false,
@@ -37,8 +84,9 @@ const FilterSidebar = ({
     rating: false,
   });
 
-  const toggle = (section) =>
-    setOpen((prev) => ({ ...prev, [section]: !prev[section] }));
+
+const toggle = (section: keyof typeof open) =>
+  setOpen((prev) => ({ ...prev, [section]: !prev[section] }));
 
   return (
     <aside
@@ -208,11 +256,7 @@ const FilterSidebar = ({
                   name="rating"
                   checked={filters.rating === r}
                   onChange={() =>
-                    onFilterChange(
-                      "rating",
-                      null,
-                      filters.rating === r ? null : r
-                    )
+                    onFilterChange("rating", 0, filters.rating === r ? null : r)
                   }
                 />
                 <span className="flex text-yellow-400">
@@ -241,182 +285,184 @@ const FilterSidebar = ({
 
 // ---------------- Product Card ----------------
 
-const ProductCard = ({ product }) => {
+type ProductCardProps = {
+  product: {
+    _id?: string;
+    id?: string;
+    title: string;
+    name?: string;
+    description?: string;
+    price: number;
+    mainImage: string;
+  };
+};
+
+const ProductCard = ({ product }: ProductCardProps) => {
   const router = useRouter();
   const { addToCart } = useProductStore();
   const { addToWishlist } = useWishlistStore();
 
-  // ✅ Auth Info
+  // ✅ JWT token aur userId localStorage se
   const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  const user =
-    typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("user") || "{}")
-      : null;
-  const userId = user?.id || null;
-  const isLoggedIn = !!token;
+  typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-  const imageUrl =
-    product.mainImage ||
-    "https://placehold.co/600x400/cccccc/ffffff?text=No+Image";
+const user =
+  typeof window !== "undefined"
+    ? JSON.parse(localStorage.getItem("user") || "{}")
+    : null;
+
+const userId = user?.id || null;
+
+const isLoggedIn = !!token;
+
+console.log("🛒 Sending cart request:", { userId, productId: product._id || product.id });
+
+  const imageUrl = `${product.mainImage}`;
 
   // --- Add to Cart ---
-  const handleAddToCart = async () => {
-    if (!isLoggedIn) {
-      router.push("/login");
+ // --- Add to Cart ---
+const handleAddToCart = async () => {
+  if (!isLoggedIn) {
+    router.push("/login");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cart`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        userId,
+        productId: product._id || product.id,
+        quantity: 1,
+      }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error("❌ Cart API error:", res.status, errorText);
+      toast.error("⚠️ Failed to add product to cart");
       return;
     }
 
-    try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cart`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          userId,
-          productId: product._id || product.id,
-          quantity: 1,
-        }),
-      });
+    const data = await res.json();
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        console.error("❌ Cart API error:", res.status, errorText);
-        toast.error("⚠️ Failed to add product to cart");
-        return;
-      }
+    addToCart({
+      id: (product._id || product.id || "").toString(),
+      title: product.title,
+      price: product.price,
+      image: product.mainImage,
+      amount: 1,
+    });
 
-      addToCart({
-        id: product._id || product.id,
-        title: product.title,
-        price: product.price,
-        image: product.mainImage,
-        amount: 1,
-      });
+    toast.success("🛒 Product added to cart!");
+    
+    // ✅ Trigger Header Update
+    window.dispatchEvent(new Event("cartUpdated"));
 
-      toast.success("🛒 Product added to cart!");
-      window.dispatchEvent(new Event("cartUpdated"));
-    } catch (err) {
-      console.error("❌ Error adding to cart:", err);
-      toast.error("Something went wrong, please try again!");
-    }
-  };
+  } catch (err) {
+    console.error("❌ Error adding to cart:", err);
+    toast.error("Something went wrong, please try again!");
+  }
+};
+
+
+
 
   // --- Add to Wishlist ---
-  const handleAddToWishlist = async () => {
-    if (!isLoggedIn) {
-      router.push("/login");
+  // --- Add to Wishlist ---
+// --- Add to Wishlist ---
+const handleAddToWishlist = async () => {
+  if (!isLoggedIn) {
+    router.push("/login");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/wishlist`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        userId,
+        productId: product._id || product.id,
+      }),
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      let message = "Something went wrong!";
+      if (res.status === 409) {
+        message = "⚠️ Product is already in your wishlist";
+      }
+      toast.error(message);
       return;
     }
 
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/wishlist`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            userId,
-            productId: product._id || product.id,
-          }),
-        }
-      );
+    const data = await res.json();
 
-      if (!res.ok) {
-        let message = "Something went wrong!";
-        if (res.status === 409) message = "⚠️ Already in your wishlist";
-        toast.error(message);
-        return;
-      }
+    addToWishlist({
+      id: (product._id || product.id || "").toString(),
+      title: product.title,
+      price: product.price,
+      image: product.mainImage,
+    });
 
-      addToWishlist({
-        id: product._id || product.id,
-        title: product.title,
-        price: product.price,
-        image: product.mainImage,
-      });
+    toast.success("✅ Product added to wishlist!");
+    
+    // ✅ Trigger Header Update
+    window.dispatchEvent(new Event("wishlistUpdated"));
 
-      toast.success("❤️ Added to wishlist!");
-      window.dispatchEvent(new Event("wishlistUpdated"));
-    } catch (err) {
-      console.error("❌ Error adding to wishlist:", err);
-      toast.error("Something went wrong, please try again!");
-    }
-  };
+  } catch (err) {
+    console.error("❌ Error adding to wishlist:", err);
+    toast.error("Something went wrong, please try again!");
+  }
+};
 
-  // --- Rating Stars ---
-  const renderStars = (rating) => {
-    const stars = [];
-    for (let i = 1; i <= 5; i++) {
-      stars.push(
-        <Star
-          key={i}
-          className={`w-4 h-4 ${
-            i <= rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-          }`}
-        />
-      );
-    }
-    return <div className="flex items-center gap-0.5">{stars}</div>;
-  };
+
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 flex flex-col border border-gray-100">
-      <div
-        className="relative cursor-pointer"
+    <div className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:-translate-y-2 transition-transform duration-300 ease-in-out flex flex-col">
+      <img
+        className="w-full h-48 object-cover cursor-pointer"
+        src={imageUrl}
+        alt={product.title}
+        onError={(e) => {
+          (e.currentTarget as HTMLImageElement).src =
+            "https://placehold.co/600x400/cccccc/ffffff?text=Image+Error";
+        }}
         onClick={() => router.push(`/product/${product._id || product.id}`)}
-      >
-        <img
-          src={imageUrl}
-          alt={product.title}
-          className="w-full h-60 object-cover rounded-t-2xl"
-          onError={(e) =>
-            (e.currentTarget.src =
-              "https://placehold.co/600x400/cccccc/ffffff?text=Image+Error")
-          }
-        />
-      </div>
-
-      <div className="flex flex-col flex-grow p-4">
+      />
+      <div className="p-6 flex flex-col flex-grow">
         <h3
-          className="text-lg font-semibold text-gray-800 mb-1 cursor-pointer line-clamp-1"
+          className="text-xl font-bold text-gray-800 mb-2 cursor-pointer"
           onClick={() => router.push(`/product/${product._id || product.id}`)}
         >
           {product.title}
         </h3>
-
-        {/* Rating */}
-        <div className="flex items-center gap-1 mb-2">
-          {renderStars(product.rating || 0)}
-          <span className="text-xs text-gray-500">
-            ({product.rating?.toFixed(1) || "0"})
-          </span>
-        </div>
-
-        <p className="text-sm text-gray-500 line-clamp-2 mb-4 flex-grow">
+        <p className="text-gray-600 text-sm mb-4 flex-grow">
           {product.description}
         </p>
-
-        <div className="flex justify-between items-center mt-auto">
-          <p className="text-xl font-bold text-indigo-600">
+        <div className="flex justify-between items-center mt-auto pt-4 border-t border-gray-100">
+          <p className="text-2xl font-black text-indigo-600">
             ₹{(product.price || 0).toFixed(2)}
           </p>
 
           <div className="flex gap-2">
             <button
               onClick={handleAddToWishlist}
-              className="p-2 rounded-lg border border-gray-200 hover:bg-pink-50"
+              className="p-2 rounded-lg border border-gray-200 hover:bg-pink-100 transition cursor-pointer"
             >
               <Heart className="w-5 h-5 text-pink-500" />
             </button>
             <button
               onClick={handleAddToCart}
-              className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-2 rounded-lg font-semibold hover:bg-indigo-600 transition"
+              className="flex items-center gap-1 bg-indigo-500 text-white px-3 py-2 rounded-lg font-semibold hover:bg-indigo-600 transition-colors duration-200 cursor-pointer"
             >
               <ShoppingCart className="w-4 h-4" />
               Add
@@ -430,13 +476,22 @@ const ProductCard = ({ product }) => {
 
 
 // ---------------- Main Shop Page ----------------
+ 
+
 
 
 export default function ShopPage() {
-  const [products, setProducts] = React.useState([]);
-  const [filtered, setFiltered] = React.useState([]);
-  const [categories, setCategories] = React.useState([]);
-  const [filters, setFilters] = React.useState({
+  // 🧩 Product interface
+
+
+  // 🧩 FilterSidebarProps definition
+
+
+  // ✅ States
+  const [products, setProducts] = React.useState<Product[]>([]);
+  const [filtered, setFiltered] = React.useState<Product[]>([]);
+  const [categories, setCategories] = React.useState<any[]>([]);
+  const [filters, setFilters] = React.useState<Filters>({
     brand: [],
     size: [],
     category: [],
@@ -449,7 +504,7 @@ export default function ShopPage() {
   const [loading, setLoading] = React.useState(true);
   const [collapsedOnMobile, setCollapsedOnMobile] = React.useState(true);
 
-  // ✅ Fetch products and categories
+  // ✅ Fetch products + categories
   React.useEffect(() => {
     const fetchData = async () => {
       try {
@@ -471,24 +526,51 @@ export default function ShopPage() {
     fetchData();
   }, []);
 
-  // ✅ Handle filter changes (category fetch)
-  const onFilterChange = async (type, value, checked) => {
-    setFilters((prev) => {
-      if (type === "price") {
-        const priceVal = Number(value) || prev.price;
-        return { ...prev, price: priceVal };
-      }
-      if (type === "rating") return { ...prev, rating: checked };
-      if (type === "__reset")
-        return { brand: [], size: [], category: [], price: 2000, rating: null };
-      if (type === "category") return { ...prev, category: checked ? [value] : [] };
+  // ✅ Filter logic
+  const onFilterChange = async (
+    type: FilterType,
+    value: string | number | null,
+    checked: boolean | number | null
+  ) => {
+    setFilters((prev: Filters): Filters => {
+      const updated = { ...prev };
 
-      const updated = new Set(prev[type]);
-      checked ? updated.add(value) : updated.delete(value);
-      return { ...prev, [type]: Array.from(updated) };
+      switch (type) {
+        case "price":
+          updated.price = Number(value);
+          break;
+
+        case "rating":
+          updated.rating = prev.rating === value ? null : (value as number);
+          break;
+
+        case "__reset":
+          return {
+            brand: [],
+            size: [],
+            category: [],
+            price: 2000,
+            rating: null,
+          };
+
+        case "category":
+          updated.category = checked ? [value as string] : [];
+          break;
+
+        case "brand":
+        case "size":
+          const key = type as "brand" | "size";
+          const arr = new Set(updated[key]);
+          if (checked) arr.add(value as string);
+          else arr.delete(value as string);
+          updated[key] = Array.from(arr);
+          break;
+      }
+
+      return updated;
     });
 
-    // ✅ Fetch category products dynamically
+    // ✅ Optional category refetch
     if (type === "category") {
       setLoading(true);
       try {
@@ -508,50 +590,49 @@ export default function ShopPage() {
     }
   };
 
-  // ✅ Apply all filters locally (price, rating, brand, size, out-of-stock, search)
+  // ✅ Apply filters
   React.useEffect(() => {
-    let result = Array.isArray(products) ? [...products] : [];
-
-    // Brand filter
-    if (filters.brand?.length)
-      result = result.filter((p) => filters.brand.includes(p.manufacturer));
-
-    // Size filter
-    if (filters.size?.length)
-      result = result.filter((p) => filters.size.includes(p.size));
-
-    // Price filter
     const priceCap = Number(filters.price) || Infinity;
-    result = result.filter((p) => Number(p.price ?? 0) <= priceCap);
+    const query = search.trim().toLowerCase();
 
-    // Rating filter
-    if (filters.rating != null)
-      result = result.filter((p) => (p.rating ?? 0) >= Number(filters.rating));
+    const result = products.filter((p: Product) => {
+      const matchBrand =
+        !filters.brand.length || filters.brand.includes(p.manufacturer ?? "");
+      const matchSize =
+        !filters.size.length || filters.size.includes(p.size ?? "");
+      const matchPrice = Number(p.price ?? 0) <= priceCap;
+      const matchRating =
+        filters.rating === null ||
+        Number(p.rating ?? 0) >= Number(filters.rating);
+      const matchStock = !hideOutOfStock || (p.inStock ?? 0) > 0;
+      const matchSearch =
+        !query ||
+        p.title?.toLowerCase().includes(query) ||
+        p.manufacturer?.toLowerCase().includes(query);
 
-    // ✅ Hide out of stock
-    if (hideOutOfStock)
-      result = result.filter((p) => (p.inStock ?? 0) > 0);
-
-    // ✅ Search filter
-    if (search.trim()) {
-      const query = search.trim().toLowerCase();
-      result = result.filter(
-        (p) =>
-          p.title?.toLowerCase().includes(query) ||
-          p.manufacturer?.toLowerCase().includes(query)
+      return (
+        matchBrand &&
+        matchSize &&
+        matchPrice &&
+        matchRating &&
+        matchStock &&
+        matchSearch
       );
-    }
+    });
 
     setFiltered(result);
   }, [filters, products, search, hideOutOfStock]);
 
-  // ✅ Sorting logic
+  // ✅ Sorting
   const sortedProducts = React.useMemo(() => {
-    if (sort === "priceLow") return [...filtered].sort((a, b) => a.price - b.price);
-    if (sort === "priceHigh") return [...filtered].sort((a, b) => b.price - a.price);
+    if (sort === "priceLow")
+      return [...filtered].sort((a, b) => a.price - b.price);
+    if (sort === "priceHigh")
+      return [...filtered].sort((a, b) => b.price - a.price);
     return filtered;
   }, [sort, filtered]);
 
+  // ✅ Render
   return (
     <div className="bg-gray-50 min-h-screen py-8 px-4 md:px-8">
       <div className="flex flex-col md:flex-row gap-8 relative">
@@ -564,11 +645,9 @@ export default function ShopPage() {
           onToggleCollapse={() => setCollapsedOnMobile(!collapsedOnMobile)}
         />
 
-        {/* Main Content */}
+        {/* Main content */}
         <div className="flex-1">
-          {/* ✅ Top Controls Bar */}
           <div className="flex flex-col md:flex-row justify-between items-center gap-3 mb-6">
-            {/* Mobile filter toggle */}
             <button
               className="md:hidden flex items-center gap-2 px-4 py-2 border rounded-lg bg-white shadow-sm text-sm font-medium"
               onClick={() => setCollapsedOnMobile(!collapsedOnMobile)}
@@ -577,7 +656,6 @@ export default function ShopPage() {
               Filters
             </button>
 
-            {/* Search bar */}
             <input
               type="text"
               value={search}
@@ -586,7 +664,6 @@ export default function ShopPage() {
               className="w-full md:w-1/3 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
             />
 
-            {/* Hide out of stock toggle */}
             <label className="flex items-center gap-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg px-3 py-2 cursor-pointer">
               <input
                 type="checkbox"
@@ -597,7 +674,6 @@ export default function ShopPage() {
               Hide Out of Stock
             </label>
 
-            {/* Sort dropdown */}
             <div className="flex items-center gap-2">
               <label className="text-sm text-gray-600">Sort by:</label>
               <select
@@ -612,7 +688,7 @@ export default function ShopPage() {
             </div>
           </div>
 
-          {/* ✅ Products Grid */}
+          {/* ✅ Product grid */}
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {Array.from({ length: 8 }).map((_, i) => (
@@ -622,7 +698,7 @@ export default function ShopPage() {
           ) : sortedProducts.length ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {sortedProducts.map((product) => (
-                <ProductCard key={product.id || product._id} product={product} />
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
           ) : (

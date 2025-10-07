@@ -7,6 +7,8 @@ import Image from "next/image";
 import { Heart, ShoppingCart } from "lucide-react";
 import toast from "react-hot-toast";
 
+
+
 export default function ProductPage() {
   const params = useParams();
   const router = useRouter();
@@ -230,7 +232,22 @@ export default function ProductPage() {
 }
 
 /* 🔹 ProductCard component (inline in same file) */
-const ProductCard = ({ product }) => {
+type ProductCardProps = {
+  product: {
+    _id?: string;
+    id?: string;
+    title: string;
+    name?: string;
+    description?: string;
+    price: number;
+    mainImage: string;
+  };
+};
+
+
+
+/* 🔹 ProductCard component (inline in same file) */
+const ProductCard = ({ product }: ProductCardProps) => {
   const router = useRouter();
   const { addToCart } = useProductStore();
   const { addToWishlist } = useWishlistStore();
@@ -284,7 +301,7 @@ const handleAddToCart = async () => {
     const data = await res.json();
 
     addToCart({
-      id: product._id || product.id,
+      id: (product._id || product.id || "").toString(),
       title: product.title,
       price: product.price,
       image: product.mainImage,
@@ -340,7 +357,7 @@ const handleAddToWishlist = async () => {
     const data = await res.json();
 
     addToWishlist({
-      id: product._id || product.id,
+      id: (product._id || product.id || "").toString(),
       title: product.title,
       price: product.price,
       image: product.mainImage,

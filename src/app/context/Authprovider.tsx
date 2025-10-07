@@ -3,6 +3,7 @@
 import React, { createContext, useState, useEffect, ReactNode } from "react";
 
 type User = {
+  id?: string;        // <--- added this line
   name: string;
   email: string;
   photoUrl?: string;
