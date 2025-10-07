@@ -39,8 +39,7 @@ const SignInPage: React.FC = () => {
         const loggedInUser: User = {
           name: res.data.user.name,
           email: res.data.user.email,
-          photoUrl: res.data.user.photoUrl || "https://placehold.co/100x100/6366f1/white?text=U"
-",
+          photoUrl: res.data.user.photoUrl || "https://placehold.co/100x100/6366f1/white?text=U",
         };
         localStorage.setItem("user", JSON.stringify(loggedInUser));
 
