@@ -633,7 +633,7 @@ export default function ShopPage() {
 
   // ✅ Render
   return (
-    <div className="bg-gray-50 min-h-screen py-8 px-4 md:px-8">
+<div className="relative flex md:flex-row min-h-screen bg-gray-50">
       <div className="flex flex-col md:flex-row gap-8 relative">
         {/* Sidebar */}
         <FilterSidebar

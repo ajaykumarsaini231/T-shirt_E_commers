@@ -8,11 +8,24 @@ import toast from "react-hot-toast";
 function OtpContent() {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [cooldown, setCooldown] = useState(0); // ⏳ Prevent spam clicking
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email"); // ✅ Comes from signup
 
+  // Countdown timer for resend button
+  React.useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
+
+  // ===========================
+  // ✅ Handle OTP Verification
+  // ===========================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -20,13 +33,12 @@ function OtpContent() {
 
     try {
       const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}api/auth/verify-otp`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/verify-otp`,
         { email, otp },
         { headers: { "Content-Type": "application/json" } }
       );
 
       if (res.data.success) {
-        // ✅ Store token and user info
         localStorage.setItem("token", res.data.token);
         localStorage.setItem(
           "user",
@@ -40,11 +52,7 @@ function OtpContent() {
         );
 
         toast.success(res.data.message || "OTP verified successfully!");
-
-        // ✅ Redirect to home
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 1200);
+        setTimeout(() => (window.location.href = "/"), 1200);
       } else {
         setErrorMsg(res.data.message || "OTP verification failed");
         toast.error(res.data.message || "OTP verification failed");
@@ -58,6 +66,37 @@ function OtpContent() {
     }
   };
 
+  // ===========================
+  // 🔁 Handle Resend OTP
+  // ===========================
+  const handleResend = async () => {
+    if (cooldown > 0) return;
+    setResending(true);
+    setErrorMsg("");
+
+    try {
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/resend-otp`,
+        { email },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      if (res.data.success) {
+        toast.success("New OTP sent to your email!");
+        setCooldown(30); // ⏳ Disable button for 30s
+      } else {
+        toast.error(res.data.message || "Failed to resend OTP");
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to resend OTP");
+    } finally {
+      setResending(false);
+    }
+  };
+
+  // ===========================
+  // 🧱 UI
+  // ===========================
   return (
     <div className="bg-gray-100 flex items-center justify-center h-screen p-4">
       <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md">
@@ -99,6 +138,25 @@ function OtpContent() {
             {loading ? "Verifying..." : "Verify & Continue"}
           </button>
         </form>
+
+        {/* 🔁 Resend OTP Section */}
+        <div className="text-center mt-6">
+          <button
+            onClick={handleResend}
+            disabled={resending || cooldown > 0}
+            className={`text-sm font-medium ${
+              resending || cooldown > 0
+                ? "text-gray-400 cursor-not-allowed"
+                : "text-blue-600 hover:underline"
+            }`}
+          >
+            {resending
+              ? "Resending..."
+              : cooldown > 0
+              ? `Resend OTP in ${cooldown}s`
+              : "Didn’t get the code? Resend OTP"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -106,7 +164,9 @@ function OtpContent() {
 
 export default function OtpPage() {
   return (
-    <Suspense fallback={<div className="text-center mt-20">Loading OTP page...</div>}>
+    <Suspense
+      fallback={<div className="text-center mt-20">Loading OTP page...</div>}
+    >
       <OtpContent />
     </Suspense>
   );
