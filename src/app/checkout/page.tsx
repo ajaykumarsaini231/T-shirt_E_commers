@@ -46,7 +46,7 @@ const CheckoutPage = () => {
       ? JSON.parse(localStorage.getItem("user") || "{}")
       : {};
 
-  // 🧾 Fetch cart
+  // 🧾 Fetch Cart
   const fetchCart = async () => {
     try {
       if (!user.id) {
@@ -63,22 +63,35 @@ const CheckoutPage = () => {
     }
   };
 
-  // 🏠 Fetch addresses
+  // 🏠 Fetch Addresses (fixed)
   const fetchAddresses = async () => {
     try {
       if (!user.id) return;
       const token = localStorage.getItem("token");
+
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/user/addresses/${user.id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+
       if (!res.ok) throw new Error("Failed to fetch addresses");
+
       const data = await res.json();
-      setAddresses(data);
+
+      // ✅ Ensure addresses is always an array
+      if (Array.isArray(data)) {
+        setAddresses(data);
+      } else if (Array.isArray(data.addresses)) {
+        setAddresses(data.addresses);
+      } else {
+        console.warn("⚠️ Unexpected address format:", data);
+        setAddresses([]);
+      }
     } catch (err) {
       console.error("⚠️ Failed to load addresses:", err);
+      setAddresses([]);
     }
   };
 
@@ -242,9 +255,7 @@ const CheckoutPage = () => {
                       />
                       <div className="ml-4 flex-1">
                         <p className="font-medium">{item.product.title}</p>
-                        <p className="text-sm text-gray-500">
-                          Qty: {item.quantity}
-                        </p>
+                        <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                       </div>
                       <p className="font-semibold text-indigo-600">
                         ₹{item.product.price}
@@ -274,24 +285,28 @@ const CheckoutPage = () => {
 
           {/* Address Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-            {addresses.map((addr) => (
-              <div
-                key={addr.id}
-                onClick={() => handleSelectAddress(addr)}
-                className={`p-4 border rounded-lg cursor-pointer ${
-                  selectedAddressId === addr.id
-                    ? "border-blue-600 bg-blue-50"
-                    : "border-gray-300 hover:border-blue-400"
-                }`}
-              >
-                <p className="font-medium">{addr.name} {addr.lastname}</p>
-                <p className="text-sm text-gray-600">{addr.address}</p>
-                <p className="text-sm text-gray-600">{addr.city}, {addr.country}</p>
-                <p className="text-sm text-gray-600">📞 {addr.phone}</p>
-              </div>
-            ))}
+            {Array.isArray(addresses) && addresses.length > 0 ? (
+              addresses.map((addr) => (
+                <div
+                  key={addr.id}
+                  onClick={() => handleSelectAddress(addr)}
+                  className={`p-4 border rounded-lg cursor-pointer ${
+                    selectedAddressId === addr.id
+                      ? "border-blue-600 bg-blue-50"
+                      : "border-gray-300 hover:border-blue-400"
+                  }`}
+                >
+                  <p className="font-medium">{addr.name} {addr.lastname}</p>
+                  <p className="text-sm text-gray-600">{addr.address}</p>
+                  <p className="text-sm text-gray-600">{addr.city}, {addr.country}</p>
+                  <p className="text-sm text-gray-600">📞 {addr.phone}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500 text-sm col-span-2">No saved addresses</p>
+            )}
 
-            {/* Add New Address Card */}
+            {/* Add New Address */}
             <div
               onClick={() => handleSelectAddress("new")}
               className="p-4 border-2 border-dashed border-gray-400 rounded-lg flex items-center justify-center cursor-pointer hover:border-blue-400"

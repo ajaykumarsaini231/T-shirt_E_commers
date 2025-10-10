@@ -16,25 +16,15 @@ interface DashboardProductDetailsProps {
   params: Promise<{ id: string }>;
 }
 
-// ✅ Helper function to generate correct image URL (robust + auto http://)
 const getImageUrl = (path: string) => {
   if (!path) return "/placeholder.png";
-
   const baseUrl = process.env.NEXT_PUBLIC_API_URL?.startsWith("http")
     ? process.env.NEXT_PUBLIC_API_URL
     : `http://${process.env.NEXT_PUBLIC_API_URL}`;
-
   return `${baseUrl}/${path.replace(/^\/+/, "")}`;
 };
 
-type Category = {
-  id: string;
-  name: string;
-  image?: string;
-  description?: string;
-  createdAt?: string;
-  updatedAt?: string;
-};
+type Category = { id: string; name: string };
 type Product = {
   id: string;
   title: string;
@@ -46,42 +36,34 @@ type Product = {
   categoryId: string;
   inStock: number;
 };
-
-type OtherImages = {
-  id: string;
-  productId: string;
-  image: string;
-};
-
+type OtherImages = { id: string; productId: string; image: string };
 
 const DashboardProductDetails = ({ params }: DashboardProductDetailsProps) => {
   const resolvedParams = use(params);
   const id = resolvedParams.id;
- 
   const [product, setProduct] = useState<Product>();
-  const [categories, setCategories] = useState<Category[]>();
+  const [categories, setCategories] = useState<Category[]>([]);
   const [otherImages, setOtherImages] = useState<OtherImages[]>([]);
   const router = useRouter();
 
-  // 🧹 Delete product
+  // Delete product
   const deleteProduct = async () => {
     try {
       const response = await apiClient.delete(`/api/products/${id}`);
-
       if (response.status === 204) {
-        toast.success("Product deleted successfully");
-        router.push("/admin/products");
+        toast.success("✅ Product deleted successfully");
+        router.push("/dashboard/admin/products");
       } else if (response.status === 400) {
-        toast.error("Cannot delete product due to foreign key constraint");
+        toast.error("⚠️ Cannot delete product due to foreign key constraint");
       } else {
         throw new Error("Unexpected error while deleting product");
       }
     } catch {
-      toast.error("There was an error while deleting product");
+      toast.error("❌ There was an error while deleting the product");
     }
   };
 
-  // ✏️ Update product
+  // Update product
   const updateProduct = async () => {
     if (
       !product?.title ||
@@ -90,72 +72,73 @@ const DashboardProductDetails = ({ params }: DashboardProductDetailsProps) => {
       !product?.manufacturer ||
       !product?.description
     ) {
-      toast.error("You need to enter values in input fields");
+      toast.error("⚠️ You need to enter values in all input fields");
       return;
     }
-
     try {
       const response = await apiClient.put(`/api/products/${id}`, product, {
         headers: { "Content-Type": "application/json" },
       });
-
       if (response.status === 200) {
-        toast.success("Product successfully updated");
+        toast.success("✅ Product updated successfully");
       } else {
         throw new Error("Error updating product");
       }
     } catch {
-      toast.error("There was an error while updating product");
+      toast.error("❌ There was an error while updating the product");
     }
   };
 
-  // 📤 Upload main image
+  // Upload main image
   const uploadFile = async (file: File) => {
     const formData = new FormData();
     formData.append("uploadedFile", file);
-
     try {
+      toast.loading("📤 Uploading file...");
       const response = await apiClient.post("/api/main-image", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      toast.dismiss();
 
       if (response.status === 200) {
         const data = await response.json();
-        toast.success("File uploaded successfully");
+        toast.success("✅ File uploaded successfully");
         setProduct((prev) => ({ ...prev!, mainImage: data.filePath }));
       } else {
-        toast.error("File upload unsuccessful.");
+        toast.error("❌ File upload unsuccessful.");
       }
-    } catch (error) {
-      console.error("Error uploading file:", error);
-      toast.error("There was an error during file upload");
+    } catch {
+      toast.dismiss();
+      toast.error("⚠️ Error during file upload");
     }
   };
 
-  // 📦 Fetch product data and related images
+  // Fetch product and categories
   const fetchProductData = async () => {
     try {
+      toast.loading("🔄 Loading product details...");
       const res = await apiClient.get(`/api/products/${id}`);
       const data = await res.json();
       setProduct(data);
+      toast.dismiss();
 
-      const imagesRes = await apiClient.get(`/api/images/${id}`, {
-        cache: "no-store",
-      });
+      const imagesRes = await apiClient.get(`/api/images/${id}`);
       const images = await imagesRes.json();
       setOtherImages(images);
     } catch (err) {
+      toast.dismiss();
+      toast.error("❌ Error fetching product data");
       console.error("Error fetching product data:", err);
     }
   };
 
-  // 🏷️ Fetch product categories
   const fetchCategories = async () => {
     try {
       const res = await apiClient.get(`/api/categories`);
       const data = await res.json();
       setCategories(data);
     } catch (err) {
+      toast.error("⚠️ Error fetching categories");
       console.error("Error fetching categories:", err);
     }
   };
@@ -166,193 +149,174 @@ const DashboardProductDetails = ({ params }: DashboardProductDetailsProps) => {
   }, [id]);
 
   return (
-    <div className="bg-white flex justify-start max-w-screen-2xl mx-auto xl:h-full max-xl:flex-col max-xl:gap-y-5">
-      <DashboardSidebar />
+    <div className="bg-gray-50 flex min-h-screen max-w-screen-2xl mx-auto xl:flex-row max-xl:flex-col">
+      {/* <DashboardSidebar /> */}
 
-      <div className="flex flex-col gap-y-7 xl:ml-5 w-full max-xl:px-5">
-        <h1 className="text-3xl font-semibold">Product details</h1>
+      <div className="flex-1 p-8 space-y-8">
+        <h1 className="text-3xl font-bold text-gray-800">Product Details</h1>
 
-        {/* Product name */}
-        <div>
-          <label className="form-control w-full max-w-xs">
-            <span className="label-text">Product name:</span>
+        {/* Product Card */}
+        <div className="bg-white p-6 rounded-2xl shadow-md space-y-6">
+          {/* Main Info */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Title */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Title</label>
+              <input
+                type="text"
+                value={product?.title || ""}
+                onChange={(e) =>
+                  setProduct({ ...product!, title: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+            </div>
+
+            {/* Price */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Price</label>
+              <input
+                type="number"
+                value={product?.price || ""}
+                onChange={(e) =>
+                  setProduct({ ...product!, price: Number(e.target.value) })
+                }
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+            </div>
+
+            {/* Manufacturer */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Manufacturer</label>
+              <input
+                type="text"
+                value={product?.manufacturer || ""}
+                onChange={(e) =>
+                  setProduct({ ...product!, manufacturer: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Category</label>
+              <select
+                value={product?.categoryId || ""}
+                onChange={(e) =>
+                  setProduct({ ...product!, categoryId: e.target.value })
+                }
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              >
+                {categories?.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {formatCategoryName(c.name)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Slug */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">Slug</label>
+              <input
+                type="text"
+                value={product?.slug || ""}
+                onChange={(e) =>
+                  setProduct({
+                    ...product!,
+                    slug: convertSlugToURLFriendly(e.target.value),
+                  })
+                }
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+            </div>
+
+            {/* Stock */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-2">In Stock</label>
+              <select
+                value={product?.inStock ?? 1}
+                onChange={(e) =>
+                  setProduct({ ...product!, inStock: Number(e.target.value) })
+                }
+                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              >
+                <option value={1}>Yes</option>
+                <option value={0}>No</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Images */}
+          <div className="space-y-4">
+            <label className="block text-gray-700 font-medium mb-2">Main Image</label>
             <input
-              type="text"
-              className="input input-bordered w-full max-w-xs"
-              value={product?.title || ""}
-              onChange={(e) =>
-                setProduct({ ...product!, title: e.target.value })
-              }
+              type="file"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) uploadFile(file);
+              }}
+              className="file-input file-input-bordered w-full max-w-xs"
             />
-          </label>
-        </div>
+            {product?.mainImage && (
+              <Image
+                src={product.mainImage}
+                alt={product?.title || "Product image"}
+                width={150}
+                height={150}
+                className="rounded-lg border mt-2"
+              />
+            )}
 
-        {/* Product price */}
-        <div>
-          <label className="form-control w-full max-w-xs">
-            <span className="label-text">Product price:</span>
-            <input
-              type="number"
-              className="input input-bordered w-full max-w-xs"
-              value={product?.price || ""}
-              onChange={(e) =>
-                setProduct({ ...product!, price: Number(e.target.value) })
-              }
-            />
-          </label>
-        </div>
-
-        {/* Manufacturer */}
-        <div>
-          <label className="form-control w-full max-w-xs">
-            <span className="label-text">Manufacturer:</span>
-            <input
-              type="text"
-              className="input input-bordered w-full max-w-xs"
-              value={product?.manufacturer || ""}
-              onChange={(e) =>
-                setProduct({ ...product!, manufacturer: e.target.value })
-              }
-            />
-          </label>
-        </div>
-
-        {/* Slug */}
-        <div>
-          <label className="form-control w-full max-w-xs">
-            <span className="label-text">Slug:</span>
-            <input
-              type="text"
-              className="input input-bordered w-full max-w-xs"
-              value={product?.slug ? convertSlugToURLFriendly(product.slug) : ""}
-              onChange={(e) =>
-                setProduct({
-                  ...product!,
-                  slug: convertSlugToURLFriendly(e.target.value),
-                })
-              }
-            />
-          </label>
-        </div>
-
-        {/* In stock */}
-        <div>
-          <label className="form-control w-full max-w-xs">
-            <span className="label-text">Is product in stock?</span>
-            <select
-              className="select select-bordered"
-              value={product?.inStock ?? 1}
-              onChange={(e) =>
-                setProduct({ ...product!, inStock: Number(e.target.value) })
-              }
-            >
-              <option value={1}>Yes</option>
-              <option value={0}>No</option>
-            </select>
-          </label>
-        </div>
-
-        {/* Category */}
-        <div>
-          <label className="form-control w-full max-w-xs">
-            <span className="label-text">Category:</span>
-            <select
-              className="select select-bordered"
-              value={product?.categoryId || ""}
-              onChange={(e) =>
-                setProduct({
-                  ...product!,
-                  categoryId: e.target.value,
-                })
-              }
-            >
-              {categories?.map((category: Category) => (
-                <option key={category.id} value={category.id}>
-                  {formatCategoryName(category.name)}
-                </option>
+            <label className="block text-gray-700 font-medium mb-2">Other Images</label>
+            <div className="flex flex-wrap gap-2">
+              {otherImages?.map((img) => (
+                <Image
+                  key={nanoid()}
+                  src={img.image}
+                  alt="Product image"
+                  width={100}
+                  height={100}
+                  className="rounded-lg border"
+                />
               ))}
-            </select>
-          </label>
-        </div>
+            </div>
+          </div>
 
-        {/* Main image upload */}
-        <div>
-          <input
-            type="file"
-            className="file-input file-input-bordered file-input-lg w-full max-w-sm"
-            onChange={(e) => {
-              const selectedFile = e.target.files?.[0];
-              if (selectedFile) uploadFile(selectedFile);
-            }}
-          />
-          {product?.mainImage && (
-            <Image
-              src={getImageUrl(product.mainImage)}
-              alt={product?.title || "Product image"}
-              className="w-auto h-auto mt-2"
-              width={100}
-              height={100}
-              onError={(e) => {
-                e.currentTarget.src = "/placeholder.png";
-              }}
-            />
-          )}
-        </div>
 
-        {/* Other images */}
-        <div className="flex gap-x-1 flex-wrap">
-          {otherImages?.map((image) => (
-            <Image
-              key={nanoid()}
-              src={getImageUrl(image.image)}
-              alt="product image"
-              width={100}
-              height={100}
-              className="w-auto h-auto rounded-lg border"
-              onError={(e) => {
-                e.currentTarget.src = "/placeholder.png";
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Description */}
-        <div>
-          <label className="form-control">
-            <span className="label-text">Product description:</span>
+          {/* Description */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-2">Description</label>
             <textarea
-              className="textarea textarea-bordered h-24"
               value={product?.description || ""}
               onChange={(e) =>
                 setProduct({ ...product!, description: e.target.value })
               }
-            ></textarea>
-          </label>
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 h-32 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex gap-4 mt-6 flex-wrap">
+            <button
+              onClick={updateProduct}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-semibold shadow-md transition"
+            >
+              Update Product
+            </button>
+            <button
+              onClick={deleteProduct}
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold shadow-md transition"
+            >
+              Delete Product
+            </button>
+          </div>
+
+          <p className="text-sm text-red-500 mt-2">
+            ⚠️ To delete the product, you must first remove all its records from orders.
+          </p>
         </div>
-
-        {/* Buttons */}
-        <div className="flex gap-x-2 max-sm:flex-col">
-          <button
-            type="button"
-            onClick={updateProduct}
-            className="uppercase bg-blue-500 px-10 py-5 text-lg border border-gray-300 font-bold text-white shadow-sm hover:bg-blue-600 focus:ring-2"
-          >
-            Update product
-          </button>
-
-          <button
-            type="button"
-            onClick={deleteProduct}
-            className="uppercase bg-red-600 px-10 py-5 text-lg border border-gray-300 font-bold text-white shadow-sm hover:bg-red-700 focus:ring-2"
-          >
-            Delete product
-          </button>
-        </div>
-
-        <p className="text-xl max-sm:text-lg text-error">
-          To delete the product you first need to delete all its records in
-          orders (customer_order_product table).
-        </p>
       </div>
     </div>
   );

@@ -1,178 +1,362 @@
 "use client";
-import DashboardSidebar from "@/components/DashboardSidebar";
+
 import React, { useEffect, useState, use } from "react";
-import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { isValidEmailAddressFormat } from "@/lib/utils";
+import toast from "react-hot-toast";
 import apiClient from "@/lib/api";
+import { isValidEmailAddressFormat } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 
 interface DashboardUserDetailsProps {
   params: Promise<{ id: string }>;
 }
 
-const DashboardSingleUserPage = ({
-  params,
-}: DashboardUserDetailsProps) => {
+interface UserData {
+  id: string;
+  name?: string;
+  email: string;
+  role: string;
+  verified?: boolean;
+  photoUrl?: string;
+  addresses?: any[];
+  Wishlist?: any[];
+  Cart?: any[];
+  orders?: any[];
+}
+
+const DashboardSingleUserPage = ({ params }: DashboardUserDetailsProps) => {
   const resolvedParams = use(params);
   const id = resolvedParams.id;
-  
-  const [userInput, setUserInput] = useState<{
-    email: string;
-    newPassword: string;
-    role: string;
-  }>({
+
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false); // ✅ For button state
+  const [user, setUser] = useState<UserData | null>(null);
+  const [openSection, setOpenSection] = useState<string | null>(null);
+
+  const [userInput, setUserInput] = useState({
+    name: "",
     email: "",
     newPassword: "",
     role: "",
+    photoUrl: "",
+    verified: false,
   });
-  const router = useRouter();
 
-  const deleteUser = async () => {
-    const requestOptions = {
-      method: "DELETE",
+  /** 🧠 Fetch user info */
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await apiClient.get(`/api/users/${id}`);
+        const data = await res.json();
+        setUser(data);
+        setUserInput({
+          name: data.name || "",
+          email: data.email || "",
+          newPassword: "",
+          role: data.role || "",
+          photoUrl: data.photoUrl || "",
+          verified: data.verified || false,
+        });
+      } catch (err) {
+        toast.error("Failed to load user data");
+      } finally {
+        setLoading(false);
+      }
     };
-    apiClient.delete(`/api/users/${id}`, requestOptions)
-      .then((response) => {
-        if (response.status === 204) {
-          toast.success("User deleted successfully");
-          router.push("/admin/users");
-        } else {
-          throw Error("There was an error while deleting user");
-        }
-      })
-      .catch((error) => {
-        toast.error("There was an error while deleting user");
-      });
-  };
+    fetchUser();
+  }, [id]);
 
+  /** 🟢 Update user info */
   const updateUser = async () => {
-    if (
-      userInput.email.length > 3 &&
-      userInput.role.length > 0 &&
-      userInput.newPassword.length > 0
-    ) {
-      if (!isValidEmailAddressFormat(userInput.email)) {
-        toast.error("You entered invalid email address format");
-        return;
-      }
-
-      if (userInput.newPassword.length > 7) {
-        const requestOptions = {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: userInput.email,
-            password: userInput.newPassword,
-            role: userInput.role,
-          }),
-        };
-        apiClient.put(`/api/users/${id}`, requestOptions)
-          .then((response) => {
-            if (response.status === 200) {
-              return response.json();
-            } else {
-              throw Error("Error while updating user");
-            }
-          })
-          .then((data) => toast.success("User successfully updated"))
-          .catch((error) => {
-            toast.error("There was an error while updating user");
-          });
-      } else {
-        toast.error("Password must be longer than 7 characters");
-        return;
-      }
-    } else {
-      toast.error("For updating a user you must enter all values");
+    if (!isValidEmailAddressFormat(userInput.email)) {
+      toast.error("Invalid email address format");
       return;
+    }
+
+    setUpdating(true); // ✅ show loading
+    try {
+      const response = await apiClient.put(`/api/users/${id}`, {
+        name: userInput.name,
+        email: userInput.email,
+        password: userInput.newPassword || undefined,
+        role: userInput.role,
+        photoUrl: userInput.photoUrl,
+        verified: userInput.verified,
+      });
+
+      if (response.status === 200) {
+        toast.success("User updated successfully");
+        const updated = await response.json();
+        setUser(updated);
+        setUserInput({ ...userInput, newPassword: "" });
+      } else {
+        toast.error("Failed to update user");
+      }
+    } catch (err) {
+      toast.error("Error updating user");
+    } finally {
+      setUpdating(false); // ✅ back to normal
     }
   };
 
-  useEffect(() => {
-    // sending API request for a single user
-    apiClient.get(`/api/users/${id}`)
-      .then((res) => {
-        return res.json();
-      })
-      .then((data) => {
-        setUserInput({
-          email: data?.email,
-          newPassword: "",
-          role: data?.role,
-        });
-      });
-  }, [id]);
+  /** 🔴 Delete user */
+  const deleteUser = async () => {
+    try {
+      const res = await apiClient.delete(`/api/users/${id}`);
+      if (res.status === 204) {
+        toast.success("User deleted successfully");
+        router.push("/dashboard/admin/users");
+      } else {
+        toast.error("Error deleting user");
+      }
+    } catch {
+      toast.error("Error deleting user");
+    }
+  };
+
+  if (loading)
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-600">
+        Loading user details...
+      </div>
+    );
+
+  if (!user)
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-600">
+        User not found.
+      </div>
+    );
+
+  /** 🌟 Collapsible Section Component */
+  const Section = ({
+    title,
+    children,
+    sectionKey,
+  }: {
+    title: string;
+    children: React.ReactNode;
+    sectionKey: string;
+  }) => (
+    <div className="border rounded-lg bg-white shadow">
+      <button
+        onClick={() =>
+          setOpenSection(openSection === sectionKey ? null : sectionKey)
+        }
+        className="flex justify-between items-center w-full px-5 py-4 text-left font-semibold text-gray-800 hover:bg-gray-50 transition"
+      >
+        <span>{title}</span>
+        <motion.div
+          animate={{ rotate: openSection === sectionKey ? 180 : 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <ChevronDown />
+        </motion.div>
+      </button>
+      <motion.div
+        initial={false}
+        animate={{
+          height: openSection === sectionKey ? "auto" : 0,
+          opacity: openSection === sectionKey ? 1 : 0,
+        }}
+        transition={{ duration: 0.4 }}
+        className="overflow-hidden border-t border-gray-200"
+      >
+        <div className="p-5">{children}</div>
+      </motion.div>
+    </div>
+  );
 
   return (
-    <div className="bg-white flex justify-start max-w-screen-2xl mx-auto xl:h-full max-xl:flex-col max-xl:gap-y-5">
-      <DashboardSidebar />
-      <div className="flex flex-col gap-y-7 xl:pl-5 max-xl:px-5 w-full">
-        <h1 className="text-3xl font-semibold">User details</h1>
-        <div>
-          <label className="form-control w-full max-w-xs">
-            <div className="label">
-              <span className="label-text">Email:</span>
-            </div>
+    <div className="bg-neutral-50 min-h-screen flex justify-start max-w-screen-2xl mx-auto xl:h-full max-xl:flex-col max-xl:gap-y-6 p-6 rounded-lg shadow-md">
+      {/* Main Content */}
+      <div className="flex flex-col gap-y-8 xl:pl-8 max-xl:px-6 w-full max-w-5xl mx-auto">
+        <h1 className="text-4xl font-extrabold text-gray-900 border-b border-gray-300 pb-4">
+          Manage User
+        </h1>
+
+        {/* User Photo */}
+        {userInput.photoUrl && (
+          <img
+            src={userInput.photoUrl}
+            alt="User Avatar"
+            className="w-24 h-24 rounded-full object-cover border shadow-md"
+          />
+        )}
+
+        {/* Editable Info */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-white p-6 rounded-lg shadow-md">
+          <div>
+            <label className="block mb-2 font-semibold text-gray-700">Name</label>
+            <input
+              type="text"
+              className="w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              placeholder="Full name"
+              value={userInput.name}
+              onChange={(e) =>
+                setUserInput({ ...userInput, name: e.target.value })
+              }
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 font-semibold text-gray-700">Email</label>
             <input
               type="email"
-              className="input input-bordered w-full max-w-xs"
+              className="w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              placeholder="Email address"
               value={userInput.email}
               onChange={(e) =>
                 setUserInput({ ...userInput, email: e.target.value })
               }
             />
-          </label>
-        </div>
+          </div>
 
-        <div>
-          <label className="form-control w-full max-w-xs">
-            <div className="label">
-              <span className="label-text">New password:</span>
-            </div>
+          <div>
+            <label className="block mb-2 font-semibold text-gray-700">
+              New Password
+            </label>
             <input
               type="password"
-              className="input input-bordered w-full max-w-xs"
+              className="w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              placeholder="Enter new password"
+              value={userInput.newPassword}
               onChange={(e) =>
                 setUserInput({ ...userInput, newPassword: e.target.value })
               }
-              value={userInput.newPassword}
             />
-          </label>
-        </div>
+          </div>
 
-        <div>
-          <label className="form-control w-full max-w-xs">
-            <div className="label">
-              <span className="label-text">User role: </span>
-            </div>
+          <div>
+            <label className="block mb-2 font-semibold text-gray-700">
+              Profile Photo URL
+            </label>
+            <input
+              type="text"
+              className="w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              placeholder="Enter photo URL"
+              value={userInput.photoUrl}
+              onChange={(e) =>
+                setUserInput({ ...userInput, photoUrl: e.target.value })
+              }
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 font-semibold text-gray-700">Role</label>
             <select
-              className="select select-bordered"
+              className="w-full px-4 py-3 border rounded-md bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               value={userInput.role}
               onChange={(e) =>
                 setUserInput({ ...userInput, role: e.target.value })
               }
             >
-              <option value="admin">admin</option>
-              <option value="user">user</option>
+              <option value="admin">Admin</option>
+              <option value="user">User</option>
             </select>
-          </label>
+          </div>
+
+          <div className="flex items-center gap-2 mt-6">
+            <input
+              type="checkbox"
+              checked={userInput.verified}
+              onChange={(e) =>
+                setUserInput({ ...userInput, verified: e.target.checked })
+              }
+              className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+            />
+            <label className="font-semibold text-gray-700">Verified</label>
+          </div>
         </div>
-        <div className="flex gap-x-2 max-sm:flex-col">
+
+        {/* Buttons */}
+        <div className="flex gap-4 max-sm:flex-col">
           <button
-            type="button"
-            className="uppercase bg-blue-500 px-10 py-5 text-lg border border-black border-gray-300 font-bold text-white shadow-sm hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-2"
             onClick={updateUser}
+            disabled={updating}
+            className={`w-full text-white font-semibold py-3 rounded-md shadow-md transition ${
+              updating
+                ? "bg-indigo-400 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700"
+            }`}
           >
-            Update user
+            {updating ? "Updating..." : "Save Changes"}
           </button>
+
           <button
-            type="button"
-            className="uppercase bg-red-600 px-10 py-5 text-lg border border-black border-gray-300 font-bold text-white shadow-sm hover:bg-red-700 hover:text-white focus:outline-none focus:ring-2"
             onClick={deleteUser}
+            className="w-full bg-red-600 text-white font-semibold py-3 rounded-md shadow-md hover:bg-red-700 transition"
           >
-            Delete user
+            Delete User
           </button>
         </div>
+
+        {/* Collapsible Data Sections */}
+        <Section title="Addresses" sectionKey="addresses">
+          {user.addresses?.length ? (
+            user.addresses.map((addr, i) => (
+              <div key={i} className="border rounded-md p-4 mb-2 bg-gray-50">
+                {addr.name} {addr.lastname}, {addr.address}, {addr.city},{" "}
+                {addr.country} - {addr.postalCode}
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500">No addresses available.</p>
+          )}
+        </Section>
+
+        <Section title="Orders" sectionKey="orders">
+          {user.orders?.length ? (
+            user.orders.map((order, i) => (
+              <div key={i} className="border rounded-md p-4 mb-2 bg-gray-50">
+                <p>
+                  <strong>Order ID:</strong> {order.id}
+                </p>
+                <p>
+                  <strong>Status:</strong> {order.status}
+                </p>
+                <p>
+                  <strong>Total:</strong> ₹{order.total}
+                </p>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500">No orders found.</p>
+          )}
+        </Section>
+
+        <Section title="Wishlist" sectionKey="wishlist">
+          {user.Wishlist?.length ? (
+            user.Wishlist.map((item, i) => (
+              <div key={i} className="border rounded-md p-4 mb-2 bg-gray-50">
+                <p>
+                  <strong>Product:</strong> {item.product?.title}
+                </p>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500">No wishlist items.</p>
+          )}
+        </Section>
+
+        <Section title="Cart" sectionKey="cart">
+          {user.Cart?.length ? (
+            user.Cart.map((item, i) => (
+              <div key={i} className="border rounded-md p-4 mb-2 bg-gray-50">
+                <p>
+                  <strong>Product:</strong> {item.product?.title}
+                </p>
+                <p>
+                  <strong>Qty:</strong> {item.quantity}
+                </p>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500">No items in cart.</p>
+          )}
+        </Section>
       </div>
     </div>
   );

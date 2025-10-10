@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useState, useCallback } from "react";
 import { useTheme } from "../app/context/ThemeProvider";
 import UserPanel from "../components/userPanel";
 import { FaShoppingCart, FaHeart } from "react-icons/fa";
+import {jwtDecode} from "jwt-decode";
+import { toast } from "react-hot-toast";
 
 // ---------- ICONS ----------
 const SunIcon = () => (
@@ -55,88 +57,117 @@ const Logo = () => (
   </div>
 );
 
+interface DecodedToken {
+  exp: number;
+  [key: string]: any;
+}
+
 // ---------- HEADER ----------
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
+  const router = useRouter();
 
   const [user, setUser] = useState<any>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [wishlistCount, setWishlistCount] = useState(0);
   const [cartCount, setCartCount] = useState(0);
 
-  // ✅ Get user from localStorage
-// 🧠 Add this state near your other useStates
-const [token, setToken] = useState<string | null>(null);
+  // ✅ Load user + token from localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUser = localStorage.getItem("user");
+      const storedToken = localStorage.getItem("token");
 
+      if (storedUser) setUser(JSON.parse(storedUser));
+      if (storedToken) setToken(storedToken);
+    }
+  }, []);
+
+  // ✅ Token expiry check
+ // ✅ Token expiry check & full data clear
 useEffect(() => {
-  if (typeof window !== "undefined") {
-    const storedUser = localStorage.getItem("user");
-    const storedToken = localStorage.getItem("token");
-
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-
-    if (storedToken) {
-      setToken(storedToken);
-    }
-  }
-}, []);
-
-// ✅ Function to fetch counts (with Authorization header)
-const fetchCounts = useCallback(async () => {
-  if (!user?.id || !token) return;
+  if (!token) return;
 
   try {
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    };
+    const decoded: DecodedToken = jwtDecode(token);
 
-    const [wishlistRes, cartRes] = await Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/wishlist/${user.id}`, { headers }),
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cart/${user.id}`, { headers }),
-    ]);
+    // Token expired
+    if (Date.now() >= decoded.exp * 1000) {
+      localStorage.clear();                // 🧹 Clear all localStorage
+      sessionStorage.clear();              // 🧹 Also clear sessionStorage (if used)
+      indexedDB.databases?.().then((dbs) => {
+        dbs?.forEach((db) => indexedDB.deleteDatabase(db.name!)); // 🧹 Optional but full wipe
+      });
 
-    if (wishlistRes.ok) {
-      const wishlistData = await wishlistRes.json();
-      setWishlistCount(Array.isArray(wishlistData) ? wishlistData.length : 0);
+      toast.error("Session expired. Please login again.");
+      router.push("/login");
+
+      // Optional: force reload to reset React states
+      setTimeout(() => window.location.reload(), 500);
     }
+  } catch {
+    // Handle invalid/malformed token too
+    localStorage.clear();
+    sessionStorage.clear();
+    indexedDB.databases?.().then((dbs) => {
+      dbs?.forEach((db) => indexedDB.deleteDatabase(db.name!));
+    });
 
-    if (cartRes.ok) {
-      const cartData = await cartRes.json();
-
-      // ✅ If cart items include quantity, sum it up; otherwise, count products
-      const totalCount = Array.isArray(cartData)
-        ? cartData.reduce((sum, item) => sum + (item.quantity || 1), 0)
-        : 0;
-
-      setCartCount(totalCount);
-    }
-  } catch (err) {
-    console.error("❌ Failed to fetch counts:", err);
+    toast.error("Invalid session. Please login again.");
+    router.push("/login");
+    setTimeout(() => window.location.reload(), 500);
   }
-}, [user, token]);
+}, [token, router]);
 
 
-  // ✅ Fetch on load & pathname change
+  // ✅ Fetch wishlist + cart counts
+  const fetchCounts = useCallback(async () => {
+    if (!user?.id || !token) return;
+
+    try {
+      const headers = {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      };
+
+      const [wishlistRes, cartRes] = await Promise.all([
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/wishlist/${user.id}`, { headers }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cart/${user.id}`, { headers }),
+      ]);
+
+      if (wishlistRes.ok) {
+        const wishlistData = await wishlistRes.json();
+        setWishlistCount(Array.isArray(wishlistData) ? wishlistData.length : 0);
+      }
+
+      if (cartRes.ok) {
+        const cartData = await cartRes.json();
+        const totalCount = Array.isArray(cartData)
+          ? cartData.reduce((sum, item) => sum + (item.quantity || 1), 0)
+          : 0;
+        setCartCount(totalCount);
+      }
+    } catch (err) {
+      console.error("❌ Failed to fetch counts:", err);
+    }
+  }, [user, token]);
+
+  // ✅ Fetch counts on mount and pathname change
   useEffect(() => {
     fetchCounts();
   }, [fetchCounts, pathname]);
 
   // ✅ Listen for real-time updates
   useEffect(() => {
-    const handleCartUpdate = () => fetchCounts();
-    const handleWishlistUpdate = () => fetchCounts();
-
-    window.addEventListener("cartUpdated", handleCartUpdate);
-    window.addEventListener("wishlistUpdated", handleWishlistUpdate);
-
+    const handleUpdate = () => fetchCounts();
+    window.addEventListener("cartUpdated", handleUpdate);
+    window.addEventListener("wishlistUpdated", handleUpdate);
     return () => {
-      window.removeEventListener("cartUpdated", handleCartUpdate);
-      window.removeEventListener("wishlistUpdated", handleWishlistUpdate);
+      window.removeEventListener("cartUpdated", handleUpdate);
+      window.removeEventListener("wishlistUpdated", handleUpdate);
     };
   }, [fetchCounts]);
 
@@ -154,7 +185,7 @@ const fetchCounts = useCallback(async () => {
         <Logo />
       </Link>
 
-      {/* Desktop Menu */}
+      {/* Desktop Nav */}
       <nav className="hidden md:flex items-center space-x-8 font-medium">
         {navItems.map((item) => (
           <Link
@@ -173,7 +204,7 @@ const fetchCounts = useCallback(async () => {
 
       {/* Right Side */}
       <div className="flex items-center space-x-4">
-        {/* 🌗 Theme Toggle */}
+        {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
           className="text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white cursor-pointer transition-transform hover:scale-110"
@@ -181,7 +212,7 @@ const fetchCounts = useCallback(async () => {
           {theme === "light" ? <MoonIcon /> : <SunIcon />}
         </button>
 
-        {/* ❤️ Wishlist */}
+        {/* Wishlist */}
         <Link href="/wishlist" className="relative flex items-center text-gray-700 dark:text-gray-300 hover:text-black">
           <FaHeart className="w-6 h-6" />
           {wishlistCount > 0 && (
@@ -191,7 +222,7 @@ const fetchCounts = useCallback(async () => {
           )}
         </Link>
 
-        {/* 🛒 Cart */}
+        {/* Cart */}
         <Link href="/cart" className="relative flex items-center text-gray-700 dark:text-gray-300 hover:text-black">
           <FaShoppingCart className="w-6 h-6" />
           {cartCount > 0 && (
@@ -201,7 +232,7 @@ const fetchCounts = useCallback(async () => {
           )}
         </Link>
 
-        {/* 👤 User */}
+        {/* User Avatar */}
         {!user ? (
           <Link
             href="/login"
@@ -224,7 +255,7 @@ const fetchCounts = useCallback(async () => {
         )}
       </div>
 
-      {/* 📱 Mobile Menu Button */}
+      {/* Mobile Menu Button */}
       <button
         onClick={() => setMenuOpen(!menuOpen)}
         className="md:hidden text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white"
@@ -232,7 +263,7 @@ const fetchCounts = useCallback(async () => {
         {menuOpen ? <CloseIcon /> : <HamburgerIcon />}
       </button>
 
-      {/* 📱 Mobile Menu */}
+      {/* Mobile Nav */}
       {menuOpen && (
         <nav className="absolute top-full left-0 w-full bg-sky-100 dark:bg-sky-900 shadow-md flex flex-col items-center space-y-4 py-6 md:hidden z-50">
           {navItems.map((item) => (
@@ -266,7 +297,7 @@ const fetchCounts = useCallback(async () => {
         </nav>
       )}
 
-      {/* ✅ User Panel */}
+      {/* User Panel */}
       <UserPanel user={user} isOpen={isPanelOpen} onClose={() => setIsPanelOpen(false)} />
     </header>
   );

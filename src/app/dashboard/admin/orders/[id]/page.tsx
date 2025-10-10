@@ -1,30 +1,24 @@
 "use client";
-import DashboardSidebar from "@/components/DashboardSidebar";
-import apiClient from "@/lib/api";
-import { isValidEmailAddressFormat, isValidNameOrLastname } from "@/lib/utils";
-import Image from "next/image";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+
 import React, { useEffect, useState } from "react";
-import toast from "react-hot-toast";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import apiClient from "@/lib/api";
+import { toast } from "react-hot-toast"
+
+interface Product {
+  id: string;
+  title: string;
+  slug: string;
+  price: number;
+  mainImage?: string;
+}
 
 interface OrderProduct {
   id: string;
-  customerOrderId: string;
-  productId: string;
   quantity: number;
-  product: {
-    id: string;
-    slug: string;
-    title: string;
-    mainImage: string;
-    price: number;
-    rating: number;
-    description: string;
-    manufacturer: string;
-    inStock: number;
-    categoryId: string;
-  };
+  product: Product;
 }
 
 interface Order {
@@ -40,305 +34,183 @@ interface Order {
   postalCode: string;
   city: string;
   country: string;
-  orderNotice?: string;
+  orderNotice: string;
   status: "processing" | "delivered" | "canceled";
   total: number;
 }
 
-const AdminSingleOrder = () => {
-  const [orderProducts, setOrderProducts] = useState<OrderProduct[]>();
-  const [order, setOrder] = useState<Order>({
-    id: "",
-    adress: "",
-    apartment: "",
-    company: "",
-    dateTime: "",
-    email: "",
-    lastname: "",
-    name: "",
-    phone: "",
-    postalCode: "",
-    city: "",
-    country: "",
-    orderNotice: "",
-    status: "processing",
-    total: 0,
-  });
+const AdminSingleOrder: React.FC = () => {
+  const [order, setOrder] = useState<Order | null>(null);
+  const [orderProducts, setOrderProducts] = useState<OrderProduct[]>([]);
+  const router = useRouter();
   const params = useParams<{ id: string }>();
 
-  const router = useRouter();
-
   useEffect(() => {
-    const fetchOrderData = async () => {
-      const response = await apiClient.get(
-        `/api/orders/${params?.id}`
-      );
-      const data: Order = await response.json();
-      setOrder(data);
-    };
+    const fetchData = async () => {
+      try {
+        const [orderRes, productsRes] = await Promise.all([
+          apiClient.get(`/api/orders/${params?.id}`),
+          apiClient.get(`/api/order-product/${params?.id}`),
+        ]);
 
-    const fetchOrderProducts = async () => {
-      const response = await apiClient.get(
-        `/api/order-product/${params?.id}`
-      );
-      const data: OrderProduct[] = await response.json();
-      setOrderProducts(data);
-    };
+        const orderData = await orderRes.json();
+        const productsData = await productsRes.json();
 
-    fetchOrderData();
-    fetchOrderProducts();
+        setOrder(orderData);
+        setOrderProducts(productsData);
+      } catch (err) {
+        console.error("Failed to fetch order:", err);
+        toast.error("Error fetching order data");
+      }
+    };
+    fetchData();
   }, [params?.id]);
 
-  const updateOrder = async () => {
-    if (
-      order?.name.length > 0 &&
-      order?.lastname.length > 0 &&
-      order?.phone.length > 0 &&
-      order?.email.length > 0 &&
-      order?.company.length > 0 &&
-      order?.adress.length > 0 &&
-      order?.apartment.length > 0 &&
-      order?.city.length > 0 &&
-      order?.country.length > 0 &&
-      order?.postalCode.length > 0
-    ) {
-      if (!isValidNameOrLastname(order?.name)) {
-        toast.error("You entered invalid name format");
-        return;
-      }
+  const handleUpdate = async () => {
+    if (!order) return;
 
-      if (!isValidNameOrLastname(order?.lastname)) {
-        toast.error("You entered invalid lastname format");
-        return;
+    try {
+      const response = await apiClient.put(`/api/orders/${order.id}`, order);
+      if (response.ok) {
+        toast.success("✅ Order updated successfully!");
+      } else {
+        throw new Error("Failed to update order");
       }
-
-      if (!isValidEmailAddressFormat(order?.email)) {
-        toast.error("You entered invalid email format");
-        return;
-      }
-
-      apiClient.put(`/api/orders/${order?.id}`, {
-        method: "PUT", // or 'PUT'
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(order),
-      })
-        .then((response) => {
-          if (response.status === 200) {
-            toast.success("Order updated successfuly");
-          } else {
-            throw Error("There was an error while updating a order");
-          }
-        })
-        .catch((error) =>
-          toast.error("There was an error while updating a order")
-        );
-    } else {
-      toast.error("Please fill all fields");
+    } catch {
+      toast.error("❌ Error updating order");
     }
   };
 
-  const deleteOrder = async () => {
-    const requestOptions = {
-      method: "DELETE",
-    };
-
-    apiClient.delete(
-      `/api/order-product/${order?.id}`,
-      requestOptions
-    ).then((response) => {
-      apiClient.delete(
-        `/api/orders/${order?.id}`,
-        requestOptions
-      ).then((response) => {
-        toast.success("Order deleted successfully");
-        router.push("/admin/orders");
-      });
-    });
+  const handleDelete = async () => {
+    if (!order) return;
+    try {
+      await apiClient.delete(`/api/order-product/${order.id}`);
+      await apiClient.delete(`/api/orders/${order.id}`);
+      toast.success("🗑️ Order deleted");
+      router.push("/dashboard/admin/orders");
+    } catch {
+      toast.error("❌ Error deleting order");
+    }
   };
 
+  if (!order)
+    return (
+      <div className="flex justify-center items-center h-[70vh]">
+        <p className="text-gray-500 animate-pulse text-lg">
+          Loading order details...
+        </p>
+      </div>
+    );
+
+  const totalTax = order.total / 5;
+  const shipping = 5;
+  const grandTotal = order.total + totalTax + shipping;
+
   return (
-    <div className="bg-white flex justify-start max-w-screen-2xl mx-auto xl:h-full max-xl:flex-col max-xl:gap-y-5">
-      <DashboardSidebar />
-      <div className="flex flex-col gap-y-7 xl:ml-5 w-full max-xl:px-5">
-        <h1 className="text-3xl font-semibold">Order details</h1>
-        <div className="mt-5">
-          <label className="w-full">
-            <div>
-              <span className="text-xl font-bold">Order ID:</span>
-              <span className="text-base"> {order?.id}</span>
+    <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
+      <h1 className="text-3xl font-semibold mb-6 text-gray-800">
+        🧾 Order Details — #{order.id}
+      </h1>
+
+      {/* Layout */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Left Column */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Customer Info */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              Customer Information
+            </h2>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {[
+                { label: "First Name", value: order.name, key: "name" },
+                { label: "Last Name", value: order.lastname, key: "lastname" },
+                { label: "Email", value: order.email, key: "email" },
+                { label: "Phone", value: order.phone, key: "phone" },
+                { label: "Company", value: order.company, key: "company" },
+                { label: "Address", value: order.adress, key: "adress" },
+                { label: "Apartment", value: order.apartment, key: "apartment" },
+                { label: "City", value: order.city, key: "city" },
+                { label: "Country", value: order.country, key: "country" },
+                { label: "Postal Code", value: order.postalCode, key: "postalCode" },
+              ].map((f) => (
+                <div key={f.key}>
+                  <label className="text-sm text-gray-500">{f.label}</label>
+                  <input
+                    type="text"
+                    className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
+                    value={f.value || ""}
+                    onChange={(e) => setOrder({ ...order, [f.key]: e.target.value })}
+                  />
+                </div>
+              ))}
             </div>
-          </label>
-        </div>
-        <div className="flex gap-x-2 max-sm:flex-col">
-          <div>
-            <label className="form-control w-full max-w-xs">
-              <div className="label">
-                <span className="label-text">Name:</span>
-              </div>
-              <input
-                type="text"
-                className="input input-bordered w-full max-w-xs"
-                value={order?.name}
-                onChange={(e) => setOrder({ ...order, name: e.target.value })}
-              />
-            </label>
-          </div>
-          <div>
-            <label className="form-control w-full max-w-xs">
-              <div className="label">
-                <span className="label-text">Lastname:</span>
-              </div>
-              <input
-                type="text"
-                className="input input-bordered w-full max-w-xs"
-                value={order?.lastname}
-                onChange={(e) =>
-                  setOrder({ ...order, lastname: e.target.value })
-                }
-              />
-            </label>
-          </div>
-        </div>
-
-        <div>
-          <label className="form-control w-full max-w-xs">
-            <div className="label">
-              <span className="label-text">Phone number:</span>
-            </div>
-            <input
-              type="text"
-              className="input input-bordered w-full max-w-xs"
-              value={order?.phone}
-              onChange={(e) => setOrder({ ...order, phone: e.target.value })}
-            />
-          </label>
-        </div>
-
-        <div>
-          <label className="form-control w-full max-w-xs">
-            <div className="label">
-              <span className="label-text">Email adress:</span>
-            </div>
-            <input
-              type="email"
-              className="input input-bordered w-full max-w-xs"
-              value={order?.email}
-              onChange={(e) => setOrder({ ...order, email: e.target.value })}
-            />
-          </label>
-        </div>
-
-        <div>
-          <label className="form-control w-full max-w-xs">
-            <div className="label">
-              <span className="label-text">Company (optional):</span>
-            </div>
-            <input
-              type="text"
-              className="input input-bordered w-full max-w-xs"
-              value={order?.company}
-              onChange={(e) => setOrder({ ...order, company: e.target.value })}
-            />
-          </label>
-        </div>
-
-        <div className="flex gap-x-2 max-sm:flex-col">
-          <div>
-            <label className="form-control w-full max-w-xs">
-              <div className="label">
-                <span className="label-text">Address:</span>
-              </div>
-              <input
-                type="text"
-                className="input input-bordered w-full max-w-xs"
-                value={order?.adress}
-                onChange={(e) => setOrder({ ...order, adress: e.target.value })}
-              />
-            </label>
           </div>
 
-          <div>
-            <label className="form-control w-full max-w-xs">
-              <div className="label">
-                <span className="label-text">Apartment, suite, etc. :</span>
+          {/* Order Products */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              Ordered Products
+            </h2>
+            {orderProducts.length > 0 ? (
+              <div className="space-y-4">
+                {orderProducts.map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-center justify-between p-3 border rounded-xl hover:bg-gray-50"
+                  >
+                    <div className="flex items-center gap-4">
+                      <Image
+                        src={
+                          p.product.mainImage
+                            ? `${p.product.mainImage}`
+                            : "/product_placeholder.jpg"
+                        }
+                        alt={p.product.title}
+                        width={60}
+                        height={60}
+                        className="rounded-lg border"
+                      />
+                      <div>
+                        <Link
+                          href={`/product/${p.product.id}`}
+                          className="font-medium text-gray-800 hover:text-indigo-600"
+                        >
+                          {p.product.title}
+                        </Link>
+                        <p className="text-sm text-gray-500">
+                          ₹{p.product.price} × {p.quantity}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="font-semibold text-gray-800">
+                      ₹{(p.product.price * p.quantity).toFixed(2)}
+                    </p>
+                  </div>
+                ))}
               </div>
-              <input
-                type="text"
-                className="input input-bordered w-full max-w-xs"
-                value={order?.apartment}
-                onChange={(e) =>
-                  setOrder({ ...order, apartment: e.target.value })
-                }
-              />
-            </label>
+            ) : (
+              <p className="text-gray-500 italic">No products found for this order.</p>
+            )}
           </div>
         </div>
 
-        <div className="flex gap-x-2 max-sm:flex-col">
-          <div>
-            <label className="form-control w-full max-w-xs">
-              <div className="label">
-                <span className="label-text">City:</span>
-              </div>
-              <input
-                type="text"
-                className="input input-bordered w-full max-w-xs"
-                value={order?.city}
-                onChange={(e) => setOrder({ ...order, city: e.target.value })}
-              />
-            </label>
-          </div>
+        {/* Right Column — Summary + Actions */}
+        <div className="space-y-6">
+          {/* Order Status & Notes */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h2 className="text-lg font-semibold mb-3 text-gray-800">
+              Order Settings
+            </h2>
 
-          <div>
-            <label className="form-control w-full max-w-xs">
-              <div className="label">
-                <span className="label-text">Country:</span>
-              </div>
-              <input
-                type="text"
-                className="input input-bordered w-full max-w-xs"
-                value={order?.country}
-                onChange={(e) =>
-                  setOrder({ ...order, country: e.target.value })
-                }
-              />
-            </label>
-          </div>
-
-          <div>
-            <label className="form-control w-full max-w-xs">
-              <div className="label">
-                <span className="label-text">Postal Code:</span>
-              </div>
-              <input
-                type="text"
-                className="input input-bordered w-full max-w-xs"
-                value={order?.postalCode}
-                onChange={(e) =>
-                  setOrder({ ...order, postalCode: e.target.value })
-                }
-              />
-            </label>
-          </div>
-        </div>
-
-        <div>
-          <label className="form-control w-full max-w-xs">
-            <div className="label">
-              <span className="label-text">Order status</span>
-            </div>
+            <label className="text-sm text-gray-500">Status</label>
             <select
-              className="select select-bordered"
-              value={order?.status}
+              className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
+              value={order.status}
               onChange={(e) =>
                 setOrder({
                   ...order,
-                  status: e.target.value as
-                    | "processing"
-                    | "delivered"
-                    | "canceled",
+                  status: e.target.value as "processing" | "delivered" | "canceled",
                 })
               }
             >
@@ -346,64 +218,59 @@ const AdminSingleOrder = () => {
               <option value="delivered">Delivered</option>
               <option value="canceled">Canceled</option>
             </select>
-          </label>
-        </div>
-        <div>
-          <label className="form-control">
-            <div className="label">
-              <span className="label-text">Order notice:</span>
-            </div>
-            <textarea
-              className="textarea textarea-bordered h-24"
-              value={order?.orderNotice || ""}
-              onChange={(e) =>
-                setOrder({ ...order, orderNotice: e.target.value })
-              }
-            ></textarea>
-          </label>
-        </div>
-        <div>
-          {orderProducts?.map((product) => (
-            <div className="flex items-center gap-x-4" key={product?.id}>
-              <Image
-                src={product?.product?.mainImage ? `/${product?.product?.mainImage}` : "/product_placeholder.jpg"}
-                alt={product?.product?.title}
-                width={50}
-                height={50}
-                className="w-auto h-auto"
+
+            <div className="mt-4">
+              <label className="text-sm text-gray-500">Order Notice</label>
+              <textarea
+                className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500"
+                rows={3}
+                value={order.orderNotice || ""}
+                onChange={(e) =>
+                  setOrder({ ...order, orderNotice: e.target.value })
+                }
               />
-              <div>
-                <Link href={`/product/${product?.product?.slug}`}>
-                  {product?.product?.title}
-                </Link>
-                <p>
-                  ${product?.product?.price} * {product?.quantity} items
-                </p>
+            </div>
+          </div>
+
+          {/* Summary */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h2 className="text-lg font-semibold mb-3 text-gray-800">
+              Payment Summary
+            </h2>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+<span>₹{order?.total?.toFixed(2) ?? "0.00"}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Tax (20%)</span>
+                <span>₹ {totalTax.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Shipping</span>
+                <span>₹ {shipping.toFixed(2)}</span>
+              </div>
+              <hr className="my-2" />
+              <div className="flex justify-between text-base font-semibold">
+                <span>Total</span>
+                <span>₹ {grandTotal.toFixed(2)}</span>
               </div>
             </div>
-          ))}
-          <div className="flex flex-col gap-y-2 mt-10">
-            <p className="text-2xl">Subtotal: ${order?.total}</p>
-            <p className="text-2xl">Tax 20%: ${order?.total / 5}</p>
-            <p className="text-2xl">Shipping: $5</p>
-            <p className="text-3xl font-semibold">
-              Total: ${order?.total + order?.total / 5 + 5}
-            </p>
           </div>
-          <div className="flex gap-x-2 max-sm:flex-col mt-5">
+
+          {/* Buttons */}
+          <div className="flex flex-col gap-3">
             <button
-              type="button"
-              className="uppercase bg-blue-500 px-10 py-5 text-lg border border-black border-gray-300 font-bold text-white shadow-sm hover:bg-blue-600 hover:text-white focus:outline-none focus:ring-2"
-              onClick={updateOrder}
+              onClick={handleUpdate}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-medium transition"
             >
-              Update order
+              💾 Update Order
             </button>
             <button
-              type="button"
-              className="uppercase bg-red-600 px-10 py-5 text-lg border border-black border-gray-300 font-bold text-white shadow-sm hover:bg-red-700 hover:text-white focus:outline-none focus:ring-2"
-              onClick={deleteOrder}
+              onClick={handleDelete}
+              className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-medium transition"
             >
-              Delete order
+              🗑️ Delete Order
             </button>
           </div>
         </div>

@@ -18,7 +18,7 @@ const DashboardSidebar = () => {
         <SidebarLink href="/dashboard/admin/products" icon={<FaTable />}>Products</SidebarLink>
         <SidebarLink href="/dashboard/admin/categories" icon={<MdCategory />}>Categories</SidebarLink>
         <SidebarLink href="/dashboard/admin/users" icon={<FaRegUser />}>Users</SidebarLink>
-        <SidebarLink href="/dashboard/admin/settings" icon={<FaGear />}>Settings</SidebarLink>
+        {/* <SidebarLink href="/dashboard/admin/settings" icon={<FaGear />}>Settings</SidebarLink> */}
       </nav>
     </aside>
   );

@@ -82,7 +82,7 @@ const SignInPage: React.FC = () => {
 
         // ✅ Redirect based on role
         if (role === "superadmin" || role === "admin") {
-          router.push("/dashboard/admin");
+          window.location.href="/dashboard/admin";
         } else {
         window.location.href = "/";// redirect after login
         }

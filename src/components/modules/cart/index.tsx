@@ -4,12 +4,19 @@ import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { ShoppingCart, Trash2, Minus, Plus } from "lucide-react";
+import {jwtDecode} from "jwt-decode";
+
+interface DecodedToken {
+  exp: number;
+  [key: string]: any;
+}
 
 export const CartModule = () => {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // ✅ Get token and user
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const user =
@@ -17,6 +24,30 @@ export const CartModule = () => {
       ? JSON.parse(localStorage.getItem("user") || "{}")
       : null;
   const userId = user?.id || null;
+
+  // ✅ Check token validity
+  useEffect(() => {
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const decoded: DecodedToken = jwtDecode(token);
+      if (Date.now() >= decoded.exp * 1000) {
+        // token expired
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        toast.error("Session expired. Please login again.");
+        router.push("/login");
+      }
+    } catch (error) {
+      console.error("Invalid token:", error);
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      router.push("/login");
+    }
+  }, [token, router]);
 
   // ✅ Fetch Cart from API
   useEffect(() => {
@@ -27,12 +58,15 @@ export const CartModule = () => {
       }
 
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cart/${userId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/api/cart/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
         if (!res.ok) throw new Error("Failed to fetch cart");
         const data = await res.json();
 
@@ -43,7 +77,10 @@ export const CartModule = () => {
             title: item.product.title,
             price: item.product.price,
             quantity: item.quantity,
-            image: item.product.mainImage || item.product.image,
+            image:
+              item.product.mainImage ||
+              item.product.image ||
+              "https://placehold.co/600x400/cccccc/ffffff?text=No+Image",
             description: item.product.description,
           }))
         );
@@ -62,14 +99,17 @@ export const CartModule = () => {
   const updateQuantity = async (id: string, quantity: number) => {
     if (quantity < 1) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cart/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ quantity }),
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/cart/${id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ quantity }),
+        }
+      );
 
       if (!res.ok) throw new Error(await res.text());
       const updatedItem = await res.json();
@@ -79,7 +119,6 @@ export const CartModule = () => {
         )
       );
       window.dispatchEvent(new Event("cartUpdated"));
-
     } catch (err) {
       console.error(err);
       toast.error("❌ Failed to update quantity");
@@ -89,10 +128,13 @@ export const CartModule = () => {
   // ✅ Remove Item (Protected)
   const removeItem = async (id: string) => {
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cart/${id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/cart/${id}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (!res.ok) throw new Error(await res.text());
       setCartItems((prev) => prev.filter((item) => item.id !== id));
       toast.success("🗑️ Removed from cart");
@@ -159,11 +201,7 @@ export const CartModule = () => {
             className="flex gap-6 border border-gray-100 rounded-xl p-4 shadow-sm hover:shadow-md transition"
           >
             <img
-              src={
-                item.image
-                  ? `${item.image}`
-                  : "https://placehold.co/600x400/cccccc/ffffff?text=No+Image"
-              }
+              src={item.image}
               alt={item.title}
               className="w-24 h-24 object-cover rounded-lg"
             />
@@ -227,7 +265,7 @@ export const CartModule = () => {
             toast.success("🛒 Proceeding to checkout...");
             setTimeout(() => {
               router.push("/checkout");
-            }, 800); // small delay so toast appears
+            }, 800);
           }}
           className="w-full mt-6 bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 transition"
         >

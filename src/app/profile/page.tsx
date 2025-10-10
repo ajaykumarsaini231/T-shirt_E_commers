@@ -15,6 +15,7 @@ import {
 import WishlistPage from "../wishlist/page";
 import toast from "react-hot-toast"; // ✅ FIXED import
 import { useRouter } from "next/navigation"; // ✅ Import router
+import apiClient from "@/lib/api";
 
 // --- MOCK DATA (User and Orders can be replaced with actual session/API data) ---
 
@@ -386,15 +387,18 @@ const OrdersContent = () => {
 
 interface Address {
   id: string;
+  userId: string;
   name: string;
   lastname: string;
-  adress: string;
+  company?: string;
+  address: string;
+  apartment?: string;
   city: string;
   postalCode: string;
   country: string;
   phone?: string;
+  orderNotice?: string;
   isDefault: boolean;
-  userId: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -409,11 +413,14 @@ const AddressesContent = () => {
   const [form, setForm] = useState({
     name: "",
     lastname: "",
+    company: "",
     address: "",
+    apartment: "",
     city: "",
     postalCode: "",
     country: "",
     phone: "",
+    orderNotice: "",
     isDefault: false,
   });
 
@@ -434,14 +441,12 @@ const AddressesContent = () => {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/user/addresses/${userId}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
       if (!res.ok) throw new Error("Failed to fetch addresses");
       const data = await res.json();
-      setAddresses(data);
+      setAddresses(data.addresses || []);
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
@@ -453,22 +458,24 @@ const AddressesContent = () => {
     fetchAddresses();
   }, [userId]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const { name, value, type } = e.target;
+  
+  const checked = type === "checkbox" && e.target instanceof HTMLInputElement ? e.target.checked : undefined;
 
-  // Save (create) or update address
+  setForm((prev) => ({
+    ...prev,
+    [name]: type === "checkbox" ? checked : value,
+  }));
+};
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userId || !token) return;
 
     try {
       setIsLoading(true);
-
       const payload = { ...form, userId };
       const url = editId
         ? `${process.env.NEXT_PUBLIC_API_URL}/api/user/addresses/${editId}`
@@ -486,29 +493,26 @@ const AddressesContent = () => {
 
       if (!res.ok) {
         const txt = await res.text().catch(() => null);
-        throw new Error(
-          txt ||
-            (editId ? "Failed to update address" : "Failed to save address")
-        );
+        throw new Error(txt || (editId ? "Failed to update address" : "Failed to save address"));
       }
 
       await fetchAddresses();
 
-      // ✅ Show toast only when updating
-      if (editId) {
-        toast.success("✅ Address updated successfully!");
-      }
+      if (editId) toast.success("✅ Address updated successfully!");
 
       setShowForm(false);
       setEditId(null);
       setForm({
         name: "",
         lastname: "",
+        company: "",
         address: "",
+        apartment: "",
         city: "",
         postalCode: "",
         country: "",
         phone: "",
+        orderNotice: "",
         isDefault: false,
       });
     } catch (err: any) {
@@ -521,14 +525,17 @@ const AddressesContent = () => {
 
   const handleEdit = (addr: Address) => {
     setForm({
-      name: addr.name,
-      lastname: addr.lastname,
-      address: addr.adress,
-      city: addr.city,
-      postalCode: addr.postalCode,
-      country: addr.country,
+      name: addr.name || "",
+      lastname: addr.lastname || "",
+      company: addr.company || "",
+      address: addr.address || "",
+      apartment: addr.apartment || "",
+      city: addr.city || "",
+      postalCode: addr.postalCode || "",
+      country: addr.country || "",
       phone: addr.phone || "",
-      isDefault: addr.isDefault,
+      orderNotice: addr.orderNotice || "",
+      isDefault: addr.isDefault || false,
     });
     setEditId(addr.id);
     setShowForm(true);
@@ -537,16 +544,12 @@ const AddressesContent = () => {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this address?")) return;
     if (!token) return;
+
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/user/addresses/${id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/addresses/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error("Failed to delete address");
       setAddresses((prev) => prev.filter((a) => a.id !== id));
     } catch (err: any) {
@@ -556,34 +559,28 @@ const AddressesContent = () => {
 
   const formatDate = (iso?: string) =>
     iso
-      ? new Date(iso).toLocaleString(undefined, {
-          dateStyle: "medium",
-          timeStyle: "short",
-        })
+      ? new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })
       : "";
 
-  if (isLoading) {
+  if (isLoading)
     return (
       <div className="flex justify-center items-center p-12">
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
         <p className="ml-4 text-gray-500">Loading your addresses...</p>
       </div>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
       <div className="text-center p-12 bg-red-50 rounded-lg border border-red-200">
-        <h3 className="text-lg font-semibold text-red-700">
-          Something went wrong
-        </h3>
+        <h3 className="text-lg font-semibold text-red-700">Something went wrong</h3>
         <p className="text-red-600 mt-2">{error}</p>
       </div>
     );
-  }
 
   return (
     <div>
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">My Addresses</h2>
         <button
@@ -593,11 +590,14 @@ const AddressesContent = () => {
             setForm({
               name: "",
               lastname: "",
+              company: "",
               address: "",
+              apartment: "",
               city: "",
               postalCode: "",
               country: "",
               phone: "",
+              orderNotice: "",
               isDefault: false,
             });
           }}
@@ -607,110 +607,50 @@ const AddressesContent = () => {
         </button>
       </div>
 
+      {/* Form */}
       {showForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="mb-8 bg-gray-50 p-6 rounded-lg border space-y-4"
-        >
+        <form onSubmit={handleSubmit} className="mb-8 bg-gray-50 p-6 rounded-lg border space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input
-              name="name"
-              placeholder="First Name"
-              value={form.name}
-              onChange={handleChange}
-              className="border rounded px-3 py-2 w-full"
-              required
-            />
-            <input
-              name="lastname"
-              placeholder="Last Name"
-              value={form.lastname}
-              onChange={handleChange}
-              className="border rounded px-3 py-2 w-full"
-              required
-            />
-            <input
-              name="address"
-              placeholder="Address"
-              value={form.address}
-              onChange={handleChange}
-              className="border rounded px-3 py-2 w-full col-span-2"
-              required
-            />
-            <input
-              name="city"
-              placeholder="City"
-              value={form.city}
-              onChange={handleChange}
-              className="border rounded px-3 py-2 w-full"
-              required
-            />
-            <input
-              name="postalCode"
-              placeholder="Postal Code"
-              value={form.postalCode}
-              onChange={handleChange}
-              className="border rounded px-3 py-2 w-full"
-              required
-            />
-            <input
-              name="country"
-              placeholder="Country"
-              value={form.country}
-              onChange={handleChange}
-              className="border rounded px-3 py-2 w-full"
-              required
-            />
-            <input
-              name="phone"
-              placeholder="Phone (optional)"
-              value={form.phone}
-              onChange={handleChange}
-              className="border rounded px-3 py-2 w-full"
-            />
+            <input name="name" placeholder="First Name" value={form.name} onChange={handleChange} className="border rounded px-3 py-2 w-full" required />
+            <input name="lastname" placeholder="Last Name" value={form.lastname} onChange={handleChange} className="border rounded px-3 py-2 w-full" required />
+            <input name="company" placeholder="Company (optional)" value={form.company} onChange={handleChange} className="border rounded px-3 py-2 w-full" />
+            <input name="address" placeholder="Address" value={form.address} onChange={handleChange} className="border rounded px-3 py-2 w-full col-span-2" required />
+            <input name="apartment" placeholder="Apartment/Suite (optional)" value={form.apartment} onChange={handleChange} className="border rounded px-3 py-2 w-full" />
+            <input name="city" placeholder="City" value={form.city} onChange={handleChange} className="border rounded px-3 py-2 w-full" required />
+            <input name="postalCode" placeholder="Postal Code" value={form.postalCode} onChange={handleChange} className="border rounded px-3 py-2 w-full" required />
+            <input name="country" placeholder="Country" value={form.country} onChange={handleChange} className="border rounded px-3 py-2 w-full" required />
+            <input name="phone" placeholder="Phone (optional)" value={form.phone} onChange={handleChange} className="border rounded px-3 py-2 w-full" />
+            <textarea name="orderNotice" placeholder="Order Notice (optional)" value={form.orderNotice} onChange={handleChange} className="border rounded px-3 py-2 w-full col-span-2" />
             <label className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                name="isDefault"
-                checked={form.isDefault}
-                onChange={handleChange}
-              />
+              <input type="checkbox" name="isDefault" checked={form.isDefault} onChange={handleChange} />
               <span>Set as default address</span>
             </label>
           </div>
-          <button
-            type="submit"
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-          >
+          <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
             {editId ? "Update Address" : "Save Address"}
           </button>
         </form>
       )}
 
+      {/* Addresses List */}
       {addresses.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {addresses.map((addr) => (
             <div key={addr.id} className="border rounded-lg p-5 relative">
-              <p className="font-bold text-lg mb-1">
-                {addr.name} {addr.lastname}
-              </p>
-              <p className="text-gray-600 text-sm mb-2">{addr.adress}</p>
-              <p className="text-gray-600 text-sm">
-                {addr.city}, {addr.postalCode}
-              </p>
+              <p className="font-bold text-lg mb-1">{addr.name} {addr.lastname}</p>
+              {addr.company && <p className="text-gray-600 text-sm mb-1">{addr.company}</p>}
+              <p className="text-gray-600 text-sm mb-1">{addr.address}</p>
+              {addr.apartment && <p className="text-gray-600 text-sm mb-1">{addr.apartment}</p>}
+              <p className="text-gray-600 text-sm">{addr.city}, {addr.postalCode}</p>
               <p className="text-gray-600 text-sm">{addr.country}</p>
+              {addr.phone && <p className="text-gray-600 text-sm">Phone: {addr.phone}</p>}
+              {addr.orderNotice && <p className="text-gray-600 text-sm">Notice: {addr.orderNotice}</p>}
 
               <div className="mt-4 flex space-x-4">
-                <button
-                  onClick={() => handleEdit(addr)}
-                  className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
-                >
+                <button onClick={() => handleEdit(addr)} className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800">
                   <Edit3 size={16} className="mr-1" /> Edit
                 </button>
-                <button
-                  onClick={() => handleDelete(addr.id)}
-                  className="flex items-center text-sm font-medium text-red-600 hover:text-red-800"
-                >
+                <button onClick={() => handleDelete(addr.id)} className="flex items-center text-sm font-medium text-red-600 hover:text-red-800">
                   <Trash2 size={16} className="mr-1" /> Remove
                 </button>
               </div>
@@ -732,17 +672,10 @@ const AddressesContent = () => {
         !showForm && (
           <div className="text-center py-12 px-6 bg-gray-50 rounded-lg border">
             <MapPin className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-4 text-lg font-semibold text-gray-800">
-              No Saved Addresses
-            </h3>
+            <h3 className="mt-4 text-lg font-semibold text-gray-800">No Saved Addresses</h3>
             <p className="mt-2 text-sm text-gray-500">
               You haven’t saved any addresses yet.{" "}
-              <button
-                onClick={() => setShowForm(true)}
-                className="text-blue-600 font-semibold hover:underline"
-              >
-                Add one now
-              </button>
+              <button onClick={() => setShowForm(true)} className="text-blue-600 font-semibold hover:underline">Add one now</button>
             </p>
           </div>
         )
@@ -751,88 +684,198 @@ const AddressesContent = () => {
   );
 };
 
-const AccountDetailsContent = () => (
-  <div>
-    <h2 className="text-2xl font-bold mb-6">Account Details</h2>
-    <div className="bg-white p-8 rounded-lg border">
-      <form className="space-y-6">
+interface User {
+  name: string;
+  email: string;
+  photoUrl?: string;
+}
+
+
+const AccountDetailsContent = () => {
+  const [loading, setLoading] = useState(true);
+  const [updating, setUpdating] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    currentPassword: "",
+    newPassword: "",
+  });
+
+  // 🧠 Fetch logged-in user data
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await apiClient.get("/api/users/me");
+        const data = await res.json();
+        setUser(data);
+        setFormData({
+          name: data.name || "",
+          email: data.email || "",
+          currentPassword: "",
+          newPassword: "",
+        });
+      } catch (err) {
+        toast.error("Failed to load account details");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  // 🟢 Handle update submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUpdating(true);
+
+    try {
+      const res = await apiClient.put("/api/users/me", {
+        name: formData.name,
+        currentPassword: formData.currentPassword || undefined,
+        newPassword: formData.newPassword || undefined,
+      });
+
+      if (res.status === 200) {
+        toast.success("Account updated successfully");
+        const updated = await res.json();
+        setUser(updated);
+        setFormData({
+          ...formData,
+          currentPassword: "",
+          newPassword: "",
+        });
+      } else {
+        const err = await res.json();
+        toast.error(err.message || "Failed to update account");
+      }
+    } catch {
+      toast.error("Error updating account");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  if (loading)
+    return (
+      <div className="flex justify-center items-center min-h-[50vh] text-gray-600">
+        Loading account details...
+      </div>
+    );
+
+  return (
+    <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-xl p-8 border border-gray-100">
+      <h2 className="text-3xl font-extrabold text-gray-900 mb-6 border-b pb-4">
+        Account Details
+      </h2>
+
+      <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Profile Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label
-              htmlFor="fullName"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              htmlFor="name"
+              className="block text-sm font-semibold text-gray-700 mb-2"
             >
               Full Name
             </label>
             <input
               type="text"
-              id="fullName"
-              defaultValue={mockUser.name}
-              className="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              id="name"
+              value={formData.name}
+              onChange={(e) =>
+                setFormData({ ...formData, name: e.target.value })
+              }
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              placeholder="Enter your name"
             />
           </div>
+
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-semibold text-gray-700 mb-2"
             >
               Email Address
             </label>
             <input
               type="email"
               id="email"
-              defaultValue={mockUser.email}
-              className="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              value={formData.email}
+              disabled
+              className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Email cannot be changed
+            </p>
           </div>
         </div>
+
+        {/* Password Section */}
         <div>
-          <h3 className="text-lg font-semibold border-b pb-2 mb-4">
+          <h3 className="text-lg font-semibold border-b pb-2 mb-4 text-gray-800">
             Change Password
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label
                 htmlFor="currentPassword"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-semibold text-gray-700 mb-2"
               >
                 Current Password
               </label>
               <input
                 type="password"
                 id="currentPassword"
+                value={formData.currentPassword}
+                onChange={(e) =>
+                  setFormData({ ...formData, currentPassword: e.target.value })
+                }
                 placeholder="••••••••"
-                className="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               />
             </div>
             <div>
               <label
                 htmlFor="newPassword"
-                className="block text-sm font-medium text-gray-700 mb-1"
+                className="block text-sm font-semibold text-gray-700 mb-2"
               >
                 New Password
               </label>
               <input
                 type="password"
                 id="newPassword"
+                value={formData.newPassword}
+                onChange={(e) =>
+                  setFormData({ ...formData, newPassword: e.target.value })
+                }
                 placeholder="••••••••"
-                className="w-full border-gray-300 rounded-lg shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               />
             </div>
           </div>
         </div>
-        <div>
+
+        {/* Submit Button */}
+        <div className="flex justify-end">
           <button
             type="submit"
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            disabled={updating}
+            className={`px-6 py-3 rounded-lg font-semibold text-white shadow-md transition-all duration-200 ${
+              updating
+                ? "bg-indigo-400 cursor-not-allowed"
+                : "bg-indigo-600 hover:bg-indigo-700"
+            }`}
           >
-            Save Changes
+            {updating ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </form>
     </div>
-  </div>
-);
+  );
+};
+
 
 // --- MAIN PROFILE PAGE COMPONENT ---
 
@@ -888,7 +931,7 @@ ordersData.orders.forEach((order: any) => {
       id: order.id || crypto.randomUUID(), // ✅ fallback id
       name: order.name,
       lastname: order.lastname,
-      adress: order.adress,
+      address: order.adress,
       city: order.city,
       country: order.country,
       postalCode: order.postalCode,
