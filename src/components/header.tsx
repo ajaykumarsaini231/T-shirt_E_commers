@@ -1,4 +1,5 @@
 "use client";
+import Cookies from 'js-cookie';
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -101,7 +102,7 @@ useEffect(() => {
       indexedDB.databases?.().then((dbs) => {
         dbs?.forEach((db) => indexedDB.deleteDatabase(db.name!)); // 🧹 Optional but full wipe
       });
-
+      Cookies.remove('Authorization', { path: '/' });
       toast.error("Session expired. Please login again.");
       router.push("/login");
 

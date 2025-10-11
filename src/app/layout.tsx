@@ -9,10 +9,9 @@ import { ThemeProvider } from "./context/ThemeProvider";
 import { AuthProvider } from "@/app/context/Authprovider";
 import Newsletter from "@/components/Newsletter";
 export const metadata = {
-  title: "My App",
-  description: "Next.js app with NextAuth + ThemeProvider",
+  title: "Dreamora",
+  description: "Dreamora is a modern e-commerce web application built with Next.js, Express, and Prisma, designed to sell custom T-shirts online. It offers a seamless shopping experience with a dynamic product catalog, secure backend, and smooth checkout process.",
 };
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
