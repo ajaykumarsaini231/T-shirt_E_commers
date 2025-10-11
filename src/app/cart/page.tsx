@@ -3,18 +3,15 @@ import SectionTitle from "@/components/SectionTitle";
 import { Loader } from "@/components/Loader";
 import { CartModule } from "@/components/modules/cart";
 import { useEffect, useState, Suspense } from "react";
-import { useRouter } from "next/navigation"; // ✅ Import router
+import { useRouter } from "next/navigation"; 
 import { toast } from "react-hot-toast";
 
 const CartPage = () => {
-
-  //  const [activeTab, setActiveTab] = useState("dashboard");
-  const router = useRouter(); // ✅ Initialize router
+  const router = useRouter(); 
 
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    // ✅ If no token → redirect to login
     if (!token) {
       toast.error("⚠️ Please login to access your Cart");
       router.push("/login");

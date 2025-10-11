@@ -61,7 +61,7 @@ interface Product {
   categoryId?: string;
   mainImage: string;
 }
-// ✅ Define props type for your ProductCard component
+//  Define props type for your ProductCard component
 type ProductCardProps = {
   product: Product;
 };
@@ -93,7 +93,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const { addToCart } = useProductStore();
   const { addToWishlist } = useWishlistStore();
 
-  // ✅ JWT token aur userId localStorage se
+  //  JWT token aur userId localStorage se
   const token =
   typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
@@ -106,10 +106,9 @@ const userId = user?.id || null;
 
 const isLoggedIn = !!token;
 
-console.log("🛒 Sending cart request:", { userId, productId: product._id || product.id });
+console.log("Sending cart request:", { userId, productId: product._id || product.id });
 
   const imageUrl = `${product.mainImage}`;
-  // --- Add to Cart ---
  // --- Add to Cart ---
 const handleAddToCart = async () => {
   if (!isLoggedIn) {
@@ -133,8 +132,8 @@ const handleAddToCart = async () => {
 
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("❌ Cart API error:", res.status, errorText);
-      toast.error("⚠️ Failed to add product to cart");
+      console.error("Cart API error:", res.status, errorText);
+      toast.error(" Failed to add product to cart");
       return;
     }
 
@@ -148,22 +147,17 @@ const handleAddToCart = async () => {
       amount: 1,
     });
 
-    toast.success("🛒 Product added to cart!");
+    toast.success(" Product added to cart!");
     
-    // ✅ Trigger Header Update
+    // Trigger Header Update
     window.dispatchEvent(new Event("cartUpdated"));
 
   } catch (err) {
-    console.error("❌ Error adding to cart:", err);
+    console.error(" Error adding to cart:", err);
     toast.error("Something went wrong, please try again!");
   }
 };
 
-
-
-
-  // --- Add to Wishlist ---
-  // --- Add to Wishlist ---
 // --- Add to Wishlist ---
 const handleAddToWishlist = async () => {
   if (!isLoggedIn) {
@@ -188,7 +182,7 @@ const handleAddToWishlist = async () => {
       const errorText = await res.text();
       let message = "Something went wrong!";
       if (res.status === 409) {
-        message = "⚠️ Product is already in your wishlist";
+        message = " Product is already in your wishlist";
       }
       toast.error(message);
       return;
@@ -203,13 +197,13 @@ const handleAddToWishlist = async () => {
       image: product.mainImage,
     });
 
-    toast.success("✅ Product added to wishlist!");
+    toast.success("Product added to wishlist!");
     
-    // ✅ Trigger Header Update
+    // Trigger Header Update
     window.dispatchEvent(new Event("wishlistUpdated"));
 
   } catch (err) {
-    console.error("❌ Error adding to wishlist:", err);
+    console.error(" Error adding to wishlist:", err);
     toast.error("Something went wrong, please try again!");
   }
 };
@@ -279,7 +273,7 @@ const CategoryPage = () => {
 
   React.useEffect(() => {
     const loadData = async () => {
-      setLoading(true);
+      setLoading(true); 
       try {
         const [categoriesResponse, productsResponse] = await Promise.all([
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`),
@@ -336,7 +330,7 @@ const CategoryPage = () => {
         const categoryProducts = await res.json();
         setFilteredProducts(categoryProducts);
       } catch (err) {
-        console.error("❌ Error fetching products by category:", err);
+        console.error(" Error fetching products by category:", err);
         setFilteredProducts(products.filter((p) => p.categoryId === categoryId));
       }
     }

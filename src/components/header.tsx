@@ -1,6 +1,5 @@
 "use client";
 import Cookies from 'js-cookie';
-
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useState, useCallback } from "react";
@@ -10,60 +9,6 @@ import { FaShoppingCart, FaHeart } from "react-icons/fa";
 import {jwtDecode} from "jwt-decode";
 import { toast } from "react-hot-toast";
 
-// ---------- ICONS ----------
-const SunIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M12 3v1m0 16v1m9-9h-1M4 
-      12H3m15.364 6.364l-.707-.707M6.343 
-      6.343l-.707-.707m12.728 0l-.707.707M6.343 
-      17.657l-.707.707M16 12a4 4 0 11-8 
-      0 4 4 0 018 0z"
-    />
-  </svg>
-);
-
-const MoonIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M20.354 15.354A9 9 0 
-      018.646 3.646 9.003 9.003 0 
-      0012 21a9.003 9.003 0 
-      008.354-5.646z"
-    />
-  </svg>
-);
-
-const HamburgerIcon = () => (
-  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-  </svg>
-);
-
-const CloseIcon = () => (
-  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-  </svg>
-);
-
-const Logo = () => (
-  <div className="w-10 h-10 bg-black text-white flex items-center justify-center rounded-md text-2xl font-serif italic">
-    d
-  </div>
-);
-
-interface DecodedToken {
-  exp: number;
-  [key: string]: any;
-}
-
-// ---------- HEADER ----------
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -76,7 +21,6 @@ export default function Header() {
   const [wishlistCount, setWishlistCount] = useState(0);
   const [cartCount, setCartCount] = useState(0);
 
-  // ✅ Load user + token from localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedUser = localStorage.getItem("user");
@@ -87,44 +31,37 @@ export default function Header() {
     }
   }, []);
 
-  // ✅ Token expiry check
- // ✅ Token expiry check & full data clear
-useEffect(() => {
-  if (!token) return;
+  useEffect(() => {
+    if (!token) return;
 
-  try {
-    const decoded: DecodedToken = jwtDecode(token);
+    try {
+      const decoded: { exp: number; [key: string]: any } = jwtDecode(token);
 
-    // Token expired
-    if (Date.now() >= decoded.exp * 1000) {
-      localStorage.clear();                // 🧹 Clear all localStorage
-      sessionStorage.clear();              // 🧹 Also clear sessionStorage (if used)
+      if (Date.now() >= decoded.exp * 1000) {
+        localStorage.clear();
+        sessionStorage.clear();
+        indexedDB.databases?.().then((dbs) => {
+          dbs?.forEach((db) => indexedDB.deleteDatabase(db.name!));
+        });
+        Cookies.remove('Authorization', { path: '/' });
+        toast.error("Session expired. Please login again.");
+        router.push("/login");
+
+        setTimeout(() => window.location.reload(), 500);
+      }
+    } catch {
+      localStorage.clear();
+      sessionStorage.clear();
       indexedDB.databases?.().then((dbs) => {
-        dbs?.forEach((db) => indexedDB.deleteDatabase(db.name!)); // 🧹 Optional but full wipe
+        dbs?.forEach((db) => indexedDB.deleteDatabase(db.name!));
       });
-      Cookies.remove('Authorization', { path: '/' });
-      toast.error("Session expired. Please login again.");
-      router.push("/login");
 
-      // Optional: force reload to reset React states
+      toast.error("Invalid session. Please login again.");
+      router.push("/login");
       setTimeout(() => window.location.reload(), 500);
     }
-  } catch {
-    // Handle invalid/malformed token too
-    localStorage.clear();
-    sessionStorage.clear();
-    indexedDB.databases?.().then((dbs) => {
-      dbs?.forEach((db) => indexedDB.deleteDatabase(db.name!));
-    });
+  }, [token, router]);
 
-    toast.error("Invalid session. Please login again.");
-    router.push("/login");
-    setTimeout(() => window.location.reload(), 500);
-  }
-}, [token, router]);
-
-
-  // ✅ Fetch wishlist + cart counts
   const fetchCounts = useCallback(async () => {
     if (!user?.id || !token) return;
 
@@ -152,16 +89,14 @@ useEffect(() => {
         setCartCount(totalCount);
       }
     } catch (err) {
-      console.error("❌ Failed to fetch counts:", err);
+      console.error("Failed to fetch counts:", err);
     }
   }, [user, token]);
 
-  // ✅ Fetch counts on mount and pathname change
   useEffect(() => {
     fetchCounts();
   }, [fetchCounts, pathname]);
 
-  // ✅ Listen for real-time updates
   useEffect(() => {
     const handleUpdate = () => fetchCounts();
     window.addEventListener("cartUpdated", handleUpdate);
@@ -172,7 +107,6 @@ useEffect(() => {
     };
   }, [fetchCounts]);
 
-  // ✅ NAV ITEMS
   const navItems = [
     { name: "Home", path: "/" },
     { name: "Shop", path: "/shop" },
@@ -183,10 +117,11 @@ useEffect(() => {
   return (
     <header className="bg-sky-100 dark:bg-sky-900 shadow-md p-4 flex justify-between items-center transition-colors duration-300 relative">
       <Link href="/">
-        <Logo />
+        <div className="w-10 h-10 bg-black text-white flex items-center justify-center rounded-md text-2xl font-serif italic">
+          d
+        </div>
       </Link>
 
-      {/* Desktop Nav */}
       <nav className="hidden md:flex items-center space-x-8 font-medium">
         {navItems.map((item) => (
           <Link
@@ -203,17 +138,32 @@ useEffect(() => {
         ))}
       </nav>
 
-      {/* Right Side */}
       <div className="flex items-center space-x-4">
-        {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
           className="text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white cursor-pointer transition-transform hover:scale-110"
         >
-          {theme === "light" ? <MoonIcon /> : <SunIcon />}
+          {theme === "light" ? (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+              />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+              />
+            </svg>
+          )}
         </button>
 
-        {/* Wishlist */}
         <Link href="/wishlist" className="relative flex items-center text-gray-700 dark:text-gray-300 hover:text-black">
           <FaHeart className="w-6 h-6" />
           {wishlistCount > 0 && (
@@ -223,7 +173,6 @@ useEffect(() => {
           )}
         </Link>
 
-        {/* Cart */}
         <Link href="/cart" className="relative flex items-center text-gray-700 dark:text-gray-300 hover:text-black">
           <FaShoppingCart className="w-6 h-6" />
           {cartCount > 0 && (
@@ -233,7 +182,6 @@ useEffect(() => {
           )}
         </Link>
 
-        {/* User Avatar */}
         {!user ? (
           <Link
             href="/login"
@@ -256,15 +204,21 @@ useEffect(() => {
         )}
       </div>
 
-      {/* Mobile Menu Button */}
       <button
         onClick={() => setMenuOpen(!menuOpen)}
         className="md:hidden text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white"
       >
-        {menuOpen ? <CloseIcon /> : <HamburgerIcon />}
+        {menuOpen ? (
+          <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        ) : (
+          <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        )}
       </button>
 
-      {/* Mobile Nav */}
       {menuOpen && (
         <nav className="absolute top-full left-0 w-full bg-sky-100 dark:bg-sky-900 shadow-md flex flex-col items-center space-y-4 py-6 md:hidden z-50">
           {navItems.map((item) => (
@@ -273,9 +227,7 @@ useEffect(() => {
               href={item.path}
               onClick={() => setMenuOpen(false)}
               className={`hover:text-black dark:hover:text-white ${
-                pathname === item.path
-                  ? "font-bold underline underline-offset-4"
-                  : "text-gray-700 dark:text-gray-300"
+                pathname === item.path ? "font-bold underline underline-offset-4" : "text-gray-700 dark:text-gray-300"
               }`}
             >
               {item.name}
@@ -298,7 +250,6 @@ useEffect(() => {
         </nav>
       )}
 
-      {/* User Panel */}
       <UserPanel user={user} isOpen={isPanelOpen} onClose={() => setIsPanelOpen(false)} />
     </header>
   );

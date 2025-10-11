@@ -7,8 +7,6 @@ import Image from "next/image";
 import { Heart, ShoppingCart } from "lucide-react";
 import toast from "react-hot-toast";
 
-
-
 export default function ProductPage() {
   const params = useParams();
   const router = useRouter();
@@ -28,7 +26,7 @@ export default function ProductPage() {
   const userId = user?.id || null;
   const isLoggedIn = !!token;
 
-  // 🔹 Fetch Product + Related Products
+  //Fetch Product + Related Products
   useEffect(() => {
     if (params?.id) {
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/${params.id}`)
@@ -36,7 +34,7 @@ export default function ProductPage() {
         .then(async (data) => {
           setProduct(data);
 
-          // ✅ Fetch same-category products
+          // Fetch same-category products
           if (data?.categoryId) {
             try {
               const res = await fetch(
@@ -49,14 +47,14 @@ export default function ProductPage() {
               );
               setRelatedProducts(filtered);
             } catch (err) {
-              console.error("❌ Related products fetch error:", err);
+              console.error(" Related products fetch error:", err);
             }
           }
 
           setLoading(false);
         })
         .catch((err) => {
-          console.error("❌ Product fetch error:", err);
+          console.error(" Product fetch error:", err);
           setLoading(false);
         });
     }
@@ -91,9 +89,9 @@ export default function ProductPage() {
         amount: 1,
       });
 
-      console.log("✅ Cart updated:", data);
+      console.log(" Cart updated:", data);
     } catch (err) {
-      console.error("❌ Error adding to cart:", err);
+      console.error(" Error adding to cart:", err);
     }
   };
 
@@ -118,7 +116,7 @@ export default function ProductPage() {
       const { checkoutUrl } = await res.json();
       router.push(checkoutUrl || "/checkout");
     } catch (err) {
-      console.error("❌ Error on buy now:", err);
+      console.error(" Error on buy now:", err);
     }
   };
 
@@ -149,9 +147,9 @@ export default function ProductPage() {
         image: product.mainImage,
       });
 
-      console.log("✅ Wishlist updated:", data);
+      console.log(" Wishlist updated:", data);
     } catch (err) {
-      console.error("❌ Error adding to wishlist:", err);
+      console.error("Error adding to wishlist:", err);
     }
   };
 
@@ -200,7 +198,7 @@ export default function ProductPage() {
             onClick={handleAddToWishlist}
             className="px-4 py-2 border rounded-lg text-pink-500 border-pink-400 hover:bg-pink-50"
           >
-            ♥ Add to Wishlist
+            Add to Wishlist
           </button>
         </div>
       </div>
@@ -231,7 +229,7 @@ export default function ProductPage() {
   );
 }
 
-/* 🔹 ProductCard component (inline in same file) */
+/*ProductCard component (inline in same file) */
 type ProductCardProps = {
   product: {
     _id?: string;
@@ -246,7 +244,7 @@ type ProductCardProps = {
 
 
 
-/* 🔹 ProductCard component (inline in same file) */
+/*ProductCard component (inline in same file) */
 const ProductCard = ({ product }: ProductCardProps) => {
   const router = useRouter();
   const { addToCart } = useProductStore();

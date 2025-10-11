@@ -72,12 +72,12 @@ const AdminSingleOrder: React.FC = () => {
     try {
       const response = await apiClient.put(`/api/orders/${order.id}`, order);
       if (response.ok) {
-        toast.success("✅ Order updated successfully!");
+        toast.success(" Order updated successfully!");
       } else {
         throw new Error("Failed to update order");
       }
     } catch {
-      toast.error("❌ Error updating order");
+      toast.error(" Error updating order");
     }
   };
 
@@ -86,10 +86,10 @@ const AdminSingleOrder: React.FC = () => {
     try {
       await apiClient.delete(`/api/order-product/${order.id}`);
       await apiClient.delete(`/api/orders/${order.id}`);
-      toast.success("🗑️ Order deleted");
+      toast.success(" Order deleted");
       router.push("/dashboard/admin/orders");
     } catch {
-      toast.error("❌ Error deleting order");
+      toast.error(" Error deleting order");
     }
   };
 
@@ -109,7 +109,7 @@ const AdminSingleOrder: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-semibold mb-6 text-gray-800">
-        🧾 Order Details — #{order.id}
+         Order Details — #{order.id}
       </h1>
 
       {/* Layout */}
@@ -264,13 +264,13 @@ const AdminSingleOrder: React.FC = () => {
               onClick={handleUpdate}
               className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-medium transition"
             >
-              💾 Update Order
+              Update Order
             </button>
             <button
               onClick={handleDelete}
               className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-lg font-medium transition"
             >
-              🗑️ Delete Order
+              Delete Order
             </button>
           </div>
         </div>

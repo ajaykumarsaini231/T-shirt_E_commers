@@ -10,7 +10,7 @@ import apiClient from "@/lib/api";
 import { sanitize } from "@/lib/sanitize";
 import { ProductInWishlist as BaseWishlistProduct } from "@/app/_zustand/wishlistStore";
 
-// ✅ Extend base wishlist product for UI-specific props
+// Extend base wishlist product for UI-specific props
 interface ProductInWishlist extends BaseWishlistProduct {
   slug?: string;
   stockAvailabillity?: boolean;
@@ -29,12 +29,12 @@ const WishItem: React.FC<ProductInWishlist> = ({
   const router = useRouter();
   const [userId, setUserId] = useState<string>();
 
-  // ✅ Open product page
+  // Open product page
   const openProduct = (slug?: string): void => {
     if (slug) router.push(`/product/${slug}`);
   };
 
-  // ✅ Fetch user by email
+  // Fetch user by email
   const getUserByEmail = async () => {
     if (session?.user?.email) {
       try {
@@ -49,7 +49,7 @@ const WishItem: React.FC<ProductInWishlist> = ({
     }
   };
 
-  // ✅ Delete wishlist item
+  // Delete wishlist item
   const deleteItemFromWishlist = async (productId: string) => {
     if (!userId) return;
 

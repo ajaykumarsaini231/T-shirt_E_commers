@@ -20,7 +20,7 @@ export const WishlistModule = () => {
     price: item?.product?.price,
     image: item?.product?.mainImage,
     slug: item?.product?.slug,
-    // ✅ Convert number → boolean safely
+    // Convert number → boolean safely
     stockAvailabillity: Boolean(item?.product?.inStock),
   }));
 

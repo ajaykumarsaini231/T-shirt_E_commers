@@ -16,7 +16,6 @@ export const CartModule = () => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // ✅ Get token and user
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
   const user =
@@ -25,7 +24,6 @@ export const CartModule = () => {
       : null;
   const userId = user?.id || null;
 
-  // ✅ Check token validity
   useEffect(() => {
     if (!token) {
       router.push("/login");
@@ -49,7 +47,7 @@ export const CartModule = () => {
     }
   }, [token, router]);
 
-  // ✅ Fetch Cart from API
+  // Fetch Cart from API
   useEffect(() => {
     const fetchCart = async () => {
       if (!token || !userId) {
@@ -85,7 +83,7 @@ export const CartModule = () => {
           }))
         );
       } catch (err) {
-        console.error("❌ Fetch cart error:", err);
+        console.error(" Fetch cart error:", err);
         toast.error("Failed to load cart");
       } finally {
         setLoading(false);
@@ -95,7 +93,7 @@ export const CartModule = () => {
     fetchCart();
   }, [token, userId]);
 
-  // ✅ Update Quantity (Protected)
+  //  Update Quantity (Protected)
   const updateQuantity = async (id: string, quantity: number) => {
     if (quantity < 1) return;
     try {
@@ -121,11 +119,11 @@ export const CartModule = () => {
       window.dispatchEvent(new Event("cartUpdated"));
     } catch (err) {
       console.error(err);
-      toast.error("❌ Failed to update quantity");
+      toast.error(" Failed to update quantity");
     }
   };
 
-  // ✅ Remove Item (Protected)
+  //  Remove Item (Protected)
   const removeItem = async (id: string) => {
     try {
       const res = await fetch(
@@ -137,14 +135,14 @@ export const CartModule = () => {
       );
       if (!res.ok) throw new Error(await res.text());
       setCartItems((prev) => prev.filter((item) => item.id !== id));
-      toast.success("🗑️ Removed from cart");
+      toast.success(" Removed from cart");
     } catch (err) {
       console.error(err);
-      toast.error("❌ Failed to remove item");
+      toast.error(" Failed to remove item");
     }
   };
 
-  // ✅ Clear Cart (Protected)
+  //  Clear Cart (Protected)
   const clearCart = async () => {
     if (!userId) return;
     try {
@@ -157,14 +155,14 @@ export const CartModule = () => {
       );
       if (!res.ok) throw new Error(await res.text());
       setCartItems([]);
-      toast.success("🧹 Cart cleared");
+      toast.success(" Cart cleared");
     } catch (err) {
       console.error(err);
-      toast.error("❌ Failed to clear cart");
+      toast.error("Failed to clear cart");
     }
   };
 
-  // ✅ Calculate totals
+  // Calculate totals
   const total = cartItems.reduce(
     (acc, item) => acc + item.price * item.quantity,
     0

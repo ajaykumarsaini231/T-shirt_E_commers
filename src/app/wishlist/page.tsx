@@ -15,7 +15,7 @@ export default function WishlistPage() {
 
     // ✅ If no token → redirect to login
     if (!token) {
-      toast.error("⚠️ Please login to access your wishlist");
+      toast.error("Please login to access your wishlist");
       router.push("/login");
     }
   }, [router]);
@@ -28,7 +28,7 @@ export default function WishlistPage() {
       : null;
   const userId = user?.id || null;
 
-  // ✅ Fetch wishlist from API
+  // Fetch wishlist from API
   useEffect(() => {
     const fetchWishlist = async () => {
       if (!token || !userId) {
@@ -51,10 +51,10 @@ export default function WishlistPage() {
             }))
           );
         } else {
-          console.error("❌ Failed to fetch wishlist:", await res.text());
+          console.error(" Failed to fetch wishlist:", await res.text());
         }
       } catch (err) {
-        console.error("❌ Fetch error:", err);
+        console.error(" Fetch error:", err);
       } finally {
         setLoading(false);
       }
@@ -102,7 +102,7 @@ export default function WishlistPage() {
   );
 }
 
-// ✅ Product Card Component
+// Product Card Component
 const ProductCard = ({
   product,
   userId,
@@ -120,7 +120,7 @@ const ProductCard = ({
     ? `${product.image}`
     : "https://placehold.co/600x400/cccccc/ffffff?text=No+Image";
 
-  // ✅ Add to Cart — now checks cart & removes from wishlist via API
+  // Add to Cart — now checks cart & removes from wishlist via API
   const handleAddToCart = async () => {
     if (!isLoggedIn) {
       router.push("/login");
@@ -128,7 +128,7 @@ const ProductCard = ({
     }
 
     try {
-      // Step 1️⃣ - Check if item already exists in cart
+      // Step 1️ - Check if item already exists in cart
       const checkRes = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/cart/${userId}`,
         {
@@ -144,11 +144,11 @@ const ProductCard = ({
       );
 
       if (alreadyInCart) {
-        toast.error("⚠️ Already in cart!");
+        toast.error(" Already in cart!");
         return;
       }
 
-      // Step 2️⃣ - Add to cart
+      // Step 2️ - Add to cart
       const addRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cart`, {
         method: "POST",
         headers: {
@@ -164,9 +164,9 @@ const ProductCard = ({
 
       if (!addRes.ok) throw new Error(await addRes.text());
 
-      toast.success("✅ Added to cart!");
+      toast.success("Added to cart!");
 
-      // Step 3️⃣ - Remove from wishlist after successful add
+      // Step 3️ - Remove from wishlist after successful add
       const removeRes = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/wishlist/${userId}/${product.id}`,
         {
@@ -177,20 +177,20 @@ const ProductCard = ({
 
       if (removeRes.ok) {
         onRemove(product.id);
-        toast("🗑️ Removed from wishlist", { icon: "💨" });
+        toast(" Removed from wishlist", { icon: "💨" });
       } else {
         console.warn("Could not remove from wishlist:", await removeRes.text());
       }
     } catch (err) {
       console.error(err);
-      toast.error("❌ Something went wrong");
+      toast.error(" Something went wrong");
     }
   };
 
-  // ✅ Remove from Wishlist
+  // Remove from Wishlist
   const handleRemoveFromWishlist = async () => {
     if (!userId || !token) {
-      toast.error("❌ Please login first");
+      toast.error("Please login first");
       return;
     }
     try {
@@ -204,20 +204,20 @@ const ProductCard = ({
 
       if (res.ok) {
         onRemove(product.id);
-        toast.success("🗑️ Removed from wishlist");
+        toast.success(" Removed from wishlist");
       } else {
         console.error(await res.text());
-        toast.error("❌ Failed to remove from wishlist");
+        toast.error(" Failed to remove from wishlist");
       }
     } catch (err) {
       console.error(err);
-      toast.error("❌ Something went wrong");
+      toast.error(" Something went wrong");
     }
   };
 
   return (
  <div className="bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 flex flex-col border border-gray-100 overflow-hidden group">
-  {/* 🖼 Product Image */}
+  {/* Product Image */}
   <div
     className="relative cursor-pointer overflow-hidden"
     onClick={() => router.push(`/product/${product.id}`)}
@@ -238,7 +238,7 @@ const ProductCard = ({
     </div>
   </div>
 
-  {/* 🧾 Product Details */}
+  {/*  Product Details */}
   <div className="flex flex-col flex-grow p-5">
     <h3
       className="text-lg font-semibold text-gray-800 mb-1 cursor-pointer hover:text-indigo-600 line-clamp-1"
@@ -249,7 +249,7 @@ const ProductCard = ({
 
     <p className="text-gray-500 text-sm mb-3 line-clamp-2">{product.description}</p>
 
-    {/* ⭐ Rating */}
+    {/* Rating */}
     <div className="flex items-center mb-3">
       {[...Array(5)].map((_, i) => (
         <svg
@@ -273,7 +273,7 @@ const ProductCard = ({
       <span className="text-xs text-gray-500 ml-1">({product.rating || 0})</span>
     </div>
 
-    {/* 💰 Price + Actions */}
+    {/*  Price + Actions */}
     <div className="flex justify-between items-center mt-auto pt-3 border-t border-gray-100">
       <p className="text-2xl font-bold text-indigo-600">
         ₹{(product.price || 0).toFixed(2)}

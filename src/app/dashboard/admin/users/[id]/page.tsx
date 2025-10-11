@@ -31,7 +31,7 @@ const DashboardSingleUserPage = ({ params }: DashboardUserDetailsProps) => {
 
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false); // ✅ For button state
+  const [updating, setUpdating] = useState(false); 
   const [user, setUser] = useState<UserData | null>(null);
   const [openSection, setOpenSection] = useState<string | null>(null);
 
@@ -44,7 +44,7 @@ const DashboardSingleUserPage = ({ params }: DashboardUserDetailsProps) => {
     verified: false,
   });
 
-  /** 🧠 Fetch user info */
+  /** Fetch user info */
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -68,14 +68,14 @@ const DashboardSingleUserPage = ({ params }: DashboardUserDetailsProps) => {
     fetchUser();
   }, [id]);
 
-  /** 🟢 Update user info */
+  /**  Update user info */
   const updateUser = async () => {
     if (!isValidEmailAddressFormat(userInput.email)) {
       toast.error("Invalid email address format");
       return;
     }
 
-    setUpdating(true); // ✅ show loading
+    setUpdating(true); //show loading
     try {
       const response = await apiClient.put(`/api/users/${id}`, {
         name: userInput.name,
@@ -97,11 +97,11 @@ const DashboardSingleUserPage = ({ params }: DashboardUserDetailsProps) => {
     } catch (err) {
       toast.error("Error updating user");
     } finally {
-      setUpdating(false); // ✅ back to normal
+      setUpdating(false); // back to normal
     }
   };
 
-  /** 🔴 Delete user */
+  /** Delete user */
   const deleteUser = async () => {
     try {
       const res = await apiClient.delete(`/api/users/${id}`);
@@ -130,7 +130,7 @@ const DashboardSingleUserPage = ({ params }: DashboardUserDetailsProps) => {
       </div>
     );
 
-  /** 🌟 Collapsible Section Component */
+  /**  Collapsible Section Component */
   const Section = ({
     title,
     children,

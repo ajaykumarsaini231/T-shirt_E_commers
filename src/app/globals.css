@@ -25,14 +25,14 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* 🌎 globals.css */
+/*  globals.css */
 
 /* Tailwind base imports */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ✅ Custom toast animations */
+/* Custom toast animations */
 @keyframes enter {
   0% {
     opacity: 0;

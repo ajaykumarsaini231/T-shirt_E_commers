@@ -51,15 +51,15 @@ const DashboardProductDetails = ({ params }: DashboardProductDetailsProps) => {
     try {
       const response = await apiClient.delete(`/api/products/${id}`);
       if (response.status === 204) {
-        toast.success("✅ Product deleted successfully");
+        toast.success(" Product deleted successfully");
         router.push("/dashboard/admin/products");
       } else if (response.status === 400) {
-        toast.error("⚠️ Cannot delete product due to foreign key constraint");
+        toast.error(" Cannot delete product due to foreign key constraint");
       } else {
         throw new Error("Unexpected error while deleting product");
       }
     } catch {
-      toast.error("❌ There was an error while deleting the product");
+      toast.error(" There was an error while deleting the product");
     }
   };
 
@@ -72,7 +72,7 @@ const DashboardProductDetails = ({ params }: DashboardProductDetailsProps) => {
       !product?.manufacturer ||
       !product?.description
     ) {
-      toast.error("⚠️ You need to enter values in all input fields");
+      toast.error(" You need to enter values in all input fields");
       return;
     }
     try {
@@ -80,12 +80,12 @@ const DashboardProductDetails = ({ params }: DashboardProductDetailsProps) => {
         headers: { "Content-Type": "application/json" },
       });
       if (response.status === 200) {
-        toast.success("✅ Product updated successfully");
+        toast.success(" Product updated successfully");
       } else {
         throw new Error("Error updating product");
       }
     } catch {
-      toast.error("❌ There was an error while updating the product");
+      toast.error(" There was an error while updating the product");
     }
   };
 
@@ -94,7 +94,7 @@ const DashboardProductDetails = ({ params }: DashboardProductDetailsProps) => {
     const formData = new FormData();
     formData.append("uploadedFile", file);
     try {
-      toast.loading("📤 Uploading file...");
+      toast.loading(" Uploading file...");
       const response = await apiClient.post("/api/main-image", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -102,21 +102,21 @@ const DashboardProductDetails = ({ params }: DashboardProductDetailsProps) => {
 
       if (response.status === 200) {
         const data = await response.json();
-        toast.success("✅ File uploaded successfully");
+        toast.success(" File uploaded successfully");
         setProduct((prev) => ({ ...prev!, mainImage: data.filePath }));
       } else {
-        toast.error("❌ File upload unsuccessful.");
+        toast.error(" File upload unsuccessful.");
       }
     } catch {
       toast.dismiss();
-      toast.error("⚠️ Error during file upload");
+      toast.error(" Error during file upload");
     }
   };
 
   // Fetch product and categories
   const fetchProductData = async () => {
     try {
-      toast.loading("🔄 Loading product details...");
+      toast.loading(" Loading product details...");
       const res = await apiClient.get(`/api/products/${id}`);
       const data = await res.json();
       setProduct(data);
@@ -127,7 +127,7 @@ const DashboardProductDetails = ({ params }: DashboardProductDetailsProps) => {
       setOtherImages(images);
     } catch (err) {
       toast.dismiss();
-      toast.error("❌ Error fetching product data");
+      toast.error(" Error fetching product data");
       console.error("Error fetching product data:", err);
     }
   };
@@ -138,7 +138,7 @@ const DashboardProductDetails = ({ params }: DashboardProductDetailsProps) => {
       const data = await res.json();
       setCategories(data);
     } catch (err) {
-      toast.error("⚠️ Error fetching categories");
+      toast.error(" Error fetching categories");
       console.error("Error fetching categories:", err);
     }
   };
@@ -314,7 +314,7 @@ const DashboardProductDetails = ({ params }: DashboardProductDetailsProps) => {
           </div>
 
           <p className="text-sm text-red-500 mt-2">
-            ⚠️ To delete the product, you must first remove all its records from orders.
+             To delete the product, you must first remove all its records from orders.
           </p>
         </div>
       </div>

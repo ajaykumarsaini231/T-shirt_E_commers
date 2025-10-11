@@ -13,11 +13,11 @@ import {
   Loader2,
 } from "lucide-react";
 import WishlistPage from "../wishlist/page";
-import toast from "react-hot-toast"; // ✅ FIXED import
-import { useRouter } from "next/navigation"; // ✅ Import router
+import toast from "react-hot-toast"; 
+import { useRouter } from "next/navigation";
 import apiClient from "@/lib/api";
 
-// --- MOCK DATA (User and Orders can be replaced with actual session/API data) ---
+// --- MOCK DATA  ---
 
 const mockUser = {
   name: "user",
@@ -68,7 +68,6 @@ const DashboardContent = () => {
   const [wishlistCount, setWishlistCount] = useState(0);
 
   useEffect(() => {
-    // ✅ Ensure this runs only on the client to avoid hydration mismatch
     setIsClient(true);
 
     const storedUser = localStorage.getItem("user");
@@ -76,8 +75,6 @@ const DashboardContent = () => {
     const token = localStorage.getItem("token");
 
     if (storedUser) setUser(JSON.parse(storedUser));
-
-    // ✅ Only proceed if userId and token are available
     if (token && storedUserId) {
       const userId = storedUserId;
 
@@ -87,7 +84,6 @@ const DashboardContent = () => {
       };
 
       console.log(token);
-      // ✅ Fetch total orders
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/orders/user/${userId}`, { headers })
         .then((res) => (res.ok ? res.json() : []))
         .then((data) => setOrdersCount(Array.isArray(data) ? data.length : 0))
@@ -96,30 +92,29 @@ const DashboardContent = () => {
           setOrdersCount(0);
         });
 
-      // ✅ Fetch saved addresses
-      // ✅ Correct
+      //  Fetch saved addresses
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/addresses/${userId}`, { headers })
         .then((res) => (res.ok ? res.json() : []))
         .then((data) =>
           setAddressesCount(Array.isArray(data) ? data.length : 0)
         )
         .catch((err) => {
-          console.error("❌ Failed to fetch addresses:", err);
+          console.error(" Failed to fetch addresses:", err);
           setAddressesCount(0);
         });
 
-      // ✅ Fetch wishlist count
+      //  Fetch wishlist count
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/wishlist/${userId}`, { headers })
         .then((res) => (res.ok ? res.json() : []))
         .then((data) => setWishlistCount(Array.isArray(data) ? data.length : 0))
         .catch((err) => {
-          console.error("❌ Failed to fetch wishlist:", err);
+          console.error(" Failed to fetch wishlist:", err);
           setWishlistCount(0);
         });
     }
   }, []);
 
-  // 🚫 Prevents rendering before client-side hydration completes
+  // Prevents rendering before client-side hydration completes
   if (!isClient) return null;
 
   return (
@@ -134,21 +129,21 @@ const DashboardContent = () => {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* ✅ Total Orders */}
+        {/*  Total Orders */}
         <div className="bg-gray-100 p-6 rounded-lg text-center">
           <Package className="mx-auto h-8 w-8 text-blue-600 mb-2" />
           <p className="text-3xl font-bold">{ordersCount}</p>
           <p className="text-gray-500">Total Orders</p>
         </div>
 
-        {/* ✅ Saved Addresses */}
+        {/*  Saved Addresses */}
         <div className="bg-gray-100 p-6 rounded-lg text-center">
           <MapPin className="mx-auto h-8 w-8 text-blue-600 mb-2" />
           <p className="text-3xl font-bold">{addressesCount}</p>
           <p className="text-gray-500">Saved Addresses</p>
         </div>
 
-        {/* ✅ Wishlist Items */}
+        {/*  Wishlist Items */}
         <div className="bg-gray-100 p-6 rounded-lg text-center">
           <Heart className="mx-auto h-8 w-8 text-blue-600 mb-2" />
           <p className="text-3xl font-bold">{wishlistCount}</p>
@@ -172,7 +167,7 @@ const OrdersContent = () => {
       typeof window !== "undefined" ? localStorage.getItem("userId") : null;
 
     if (!token || !userId) {
-      toast.error("⚠️ Please log in again.");
+      toast.error(" Please log in again.");
       setError("No token or user ID found");
       setLoading(false);
       return;
@@ -190,30 +185,30 @@ const OrdersContent = () => {
           }
         );
 
-        // ✅ Handle special case for "no orders"
+        // Handle special case for "no orders"
         if (res.status === 404) {
           console.warn("No orders found for this user.");
           setOrders([]); // Empty array = no orders
           return;
         }
 
-        // ❌ Handle other failures
+        //  Handle other failures
         if (!res.ok) {
-          console.error("❌ Failed to fetch orders:", res.status);
+          console.error(" Failed to fetch orders:", res.status);
           throw new Error(`Failed to fetch orders (${res.status})`);
         }
 
         const data = await res.json();
 
-        // ✅ Safe handling for non-array responses
+        // Safe handling for non-array responses
         if (Array.isArray(data)) {
           setOrders(data);
         } else {
-          console.warn("⚠️ Orders API did not return an array:", data);
+          console.warn("Orders API did not return an array:", data);
           setOrders([]);
         }
       } catch (err: any) {
-        console.error("❌ Failed to load orders:", err);
+        console.error(" Failed to load orders:", err);
         toast.error("Failed to load orders.");
         setError(err.message);
       } finally {
@@ -224,7 +219,7 @@ const OrdersContent = () => {
     fetchOrders();
   }, []);
 
-  // 🧩 Optional: You can uncomment this to test UI with fake orders
+  //  Optional:  this to test UI with fake orders
   /*
   useEffect(() => {
     setOrders([
@@ -272,7 +267,7 @@ const OrdersContent = () => {
     );
 
   if (error)
-    return <div className="text-center py-20 text-red-500">⚠️ {error}</div>;
+    return <div className="text-center py-20 text-red-500"> {error}</div>;
 
   if (orders.length === 0)
     return (
@@ -498,7 +493,7 @@ const AddressesContent = () => {
 
       await fetchAddresses();
 
-      if (editId) toast.success("✅ Address updated successfully!");
+      if (editId) toast.success("Address updated successfully!");
 
       setShowForm(false);
       setEditId(null);
@@ -703,7 +698,7 @@ const AccountDetailsContent = () => {
     newPassword: "",
   });
 
-  // 🧠 Fetch logged-in user data
+  //  Fetch logged-in user data
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -725,7 +720,7 @@ const AccountDetailsContent = () => {
     fetchUser();
   }, []);
 
-  // 🟢 Handle update submission
+  //  Handle update submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setUpdating(true);
@@ -891,9 +886,9 @@ const UserProfilePage = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
 
-    // ✅ If no token → redirect to login
+    // If no token → redirect to login
     if (!token) {
-      toast.error("⚠️ Please login to access your profile");
+      toast.error("Please login to access your profile");
       router.push("/login");
     }
   }, [router]);
@@ -928,7 +923,7 @@ ordersData.orders.forEach((order: any) => {
 
   if (!addressMap.has(fullAddress)) {
     addressMap.set(fullAddress, {
-      id: order.id || crypto.randomUUID(), // ✅ fallback id
+      id: order.id || crypto.randomUUID(), 
       name: order.name,
       lastname: order.lastname,
       address: order.adress,
@@ -984,7 +979,7 @@ ordersData.orders.forEach((order: any) => {
   });
 
   useEffect(() => {
-    // ✅ Try to get user data from localStorage
+    // Try to get user data from localStorage
     const storedUser = localStorage.getItem("user");
 
     if (storedUser) {
@@ -992,7 +987,7 @@ ordersData.orders.forEach((order: any) => {
         const parsedUser = JSON.parse(storedUser);
         setUser(parsedUser);
       } catch (err) {
-        console.error("⚠️ Failed to parse user from localStorage:", err);
+        console.error(" Failed to parse user from localStorage:", err);
       }
     }
   }, []);
@@ -1036,28 +1031,19 @@ const NavLink: React.FC<NavLinkProps> = ({ tabName, icon: Icon, label }) => (
       localStorage.removeItem("cart");
       localStorage.removeItem("wishlist");
       localStorage.removeItem("checkoutData");
-
-      // 🔹 Optional: clear session storage too
       sessionStorage.clear();
-
-      // 🔹 Optional: if you use cookies for auth
       document.cookie.split(";").forEach((c) => {
         document.cookie = c
           .replace(/^ +/, "")
           .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
       });
-
-      // 🔹 Optional: full site data reset
       localStorage.clear();
-
       toast.success("Logged out successfully!");
-
-      // 🔹 Redirect after a short delay
       setTimeout(() => {
         window.location.href = "/login";
       }, 800);
     } catch (error) {
-      console.error("❌ Logout failed:", error);
+      console.error(" Logout failed:", error);
       toast.error("Logout failed, please try again!");
     }
   };

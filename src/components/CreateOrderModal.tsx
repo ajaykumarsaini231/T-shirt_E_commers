@@ -106,7 +106,7 @@ const CreateOrderModal: React.FC<Props> = ({ onClose }) => {
       onClose();
     } catch (err: any) {
       console.error(err);
-      toast.error("❌ Failed to create order");
+      toast.error(" Failed to create order");
     }
   };
 
@@ -270,7 +270,7 @@ const CreateOrderModal: React.FC<Props> = ({ onClose }) => {
             disabled={!selectedUser || selectedProducts.length === 0}
             className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg shadow-md"
           >
-            ✅ Create Order
+             Create Order
           </button>
         </div>
       </div>

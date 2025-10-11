@@ -17,7 +17,7 @@ const DashboardCreateNewUser = () => {
   const addNewUser = async () => {
     const { email, password, role } = userInput;
 
-    // 🧩 Basic validation
+    //  Basic validation
     if (!email || !password) {
       toast.error("You must enter all input values to add a user");
       return;
@@ -34,10 +34,10 @@ const DashboardCreateNewUser = () => {
     }
 
     try {
-      // 🧼 Sanitize before sending
+      // Sanitize before sending
       const sanitizedUserInput = sanitizeFormData({ email, password, role });
 
-      // 📤 Send to backend
+      // Send to backend
       const response = await apiClient.post(`/api/users`, sanitizedUserInput, {
         headers: { "Content-Type": "application/json" },
       });

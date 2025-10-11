@@ -343,8 +343,8 @@ const handleAddToCart = async () => {
 
     if (!res.ok) {
       const errorText = await res.text();
-      console.error("❌ Cart API error:", res.status, errorText);
-      toast.error("⚠️ Failed to add product to cart");
+      console.error("Cart API error:", res.status, errorText);
+      toast.error(" Failed to add product to cart");
       return;
     }
 
@@ -358,22 +358,17 @@ const handleAddToCart = async () => {
       amount: 1,
     });
 
-    toast.success("🛒 Product added to cart!");
+    toast.success("Product added to cart!");
     
-    // ✅ Trigger Header Update
+    //  Trigger Header Update
     window.dispatchEvent(new Event("cartUpdated"));
 
   } catch (err) {
-    console.error("❌ Error adding to cart:", err);
+    console.error(" Error adding to cart:", err);
     toast.error("Something went wrong, please try again!");
   }
 };
 
-
-
-
-  // --- Add to Wishlist ---
-  // --- Add to Wishlist ---
 // --- Add to Wishlist ---
 const handleAddToWishlist = async () => {
   if (!isLoggedIn) {
@@ -398,7 +393,7 @@ const handleAddToWishlist = async () => {
       const errorText = await res.text();
       let message = "Something went wrong!";
       if (res.status === 409) {
-        message = "⚠️ Product is already in your wishlist";
+        message = "Product is already in your wishlist";
       }
       toast.error(message);
       return;
@@ -413,13 +408,13 @@ const handleAddToWishlist = async () => {
       image: product.mainImage,
     });
 
-    toast.success("✅ Product added to wishlist!");
+    toast.success(" Product added to wishlist!");
     
-    // ✅ Trigger Header Update
+    //  Trigger Header Update
     window.dispatchEvent(new Event("wishlistUpdated"));
 
   } catch (err) {
-    console.error("❌ Error adding to wishlist:", err);
+    console.error(" Error adding to wishlist:", err);
     toast.error("Something went wrong, please try again!");
   }
 };
@@ -477,16 +472,8 @@ const handleAddToWishlist = async () => {
 // ---------------- Main Shop Page ----------------
  
 
-
-
 export default function ShopPage() {
-  // 🧩 Product interface
-
-
-  // 🧩 FilterSidebarProps definition
-
-
-  // ✅ States
+ 
   const [products, setProducts] = React.useState<Product[]>([]);
   const [filtered, setFiltered] = React.useState<Product[]>([]);
   const [categories, setCategories] = React.useState<any[]>([]);
@@ -503,7 +490,7 @@ export default function ShopPage() {
   const [loading, setLoading] = React.useState(true);
   const [collapsedOnMobile, setCollapsedOnMobile] = React.useState(true);
 
-  // ✅ Fetch products + categories
+  //  Fetch products + categories
   React.useEffect(() => {
     const fetchData = async () => {
       try {
@@ -517,7 +504,7 @@ export default function ShopPage() {
         setFiltered(pData);
         setCategories(cData);
       } catch (err) {
-        console.error("❌ Error fetching data:", err);
+        console.error("Error fetching data:", err);
       } finally {
         setLoading(false);
       }
@@ -525,7 +512,7 @@ export default function ShopPage() {
     fetchData();
   }, []);
 
-  // ✅ Filter logic
+  //  Filter logic
   const onFilterChange = async (
     type: FilterType,
     value: string | number | null,
@@ -569,7 +556,7 @@ export default function ShopPage() {
       return updated;
     });
 
-    // ✅ Optional category refetch
+    // Optional category refetch
     if (type === "category") {
       setLoading(true);
       try {
@@ -582,14 +569,14 @@ export default function ShopPage() {
         setProducts(data);
         setFiltered(data);
       } catch (err) {
-        console.error("❌ Error fetching category products:", err);
+        console.error("Error fetching category products:", err);
       } finally {
         setLoading(false);
       }
     }
   };
 
-  // ✅ Apply filters
+  //  Apply filters
   React.useEffect(() => {
     const priceCap = Number(filters.price) || Infinity;
     const query = search.trim().toLowerCase();
@@ -622,7 +609,7 @@ export default function ShopPage() {
     setFiltered(result);
   }, [filters, products, search, hideOutOfStock]);
 
-  // ✅ Sorting
+  // Sorting
   const sortedProducts = React.useMemo(() => {
     if (sort === "priceLow")
       return [...filtered].sort((a, b) => a.price - b.price);
@@ -631,7 +618,7 @@ export default function ShopPage() {
     return filtered;
   }, [sort, filtered]);
 
-  // ✅ Render
+  //  Render
   return (
 <div className="relative flex md:flex-row min-h-screen bg-gray-50">
       <div className="flex flex-col md:flex-row gap-8 relative">
@@ -687,7 +674,7 @@ export default function ShopPage() {
             </div>
           </div>
 
-          {/* ✅ Product grid */}
+          {/* Product grid */}
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {Array.from({ length: 8 }).map((_, i) => (

@@ -6,8 +6,6 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 // --- COMPONENT START ---
 const Hero = () => {
   // --- SLIDE DATA ---
-  // Define your slides right here in the component.
-  // Using placeholder images to resolve build errors. 
   // You can replace these URLs with paths to your images in the `public` folder, e.g., "/images/hero-1.jpg"
   const slides: {
     id: number;

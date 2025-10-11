@@ -10,10 +10,10 @@ function OtpContent() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [cooldown, setCooldown] = useState(0); // ⏳ Prevent spam clicking
+  const [cooldown, setCooldown] = useState(0); // Prevent spam clicking
   const router = useRouter();
   const searchParams = useSearchParams();
-  const email = searchParams.get("email"); // ✅ Comes from signup
+  const email = searchParams.get("email"); //  Comes from signup
 
   // Countdown timer for resend button
   React.useEffect(() => {
@@ -23,10 +23,9 @@ function OtpContent() {
     }
   }, [cooldown]);
 
-  // ===========================
-  // ✅ Handle OTP Verification
-  // ===========================
-  const handleSubmit = async (e: React.FormEvent) => {
+ 
+  // Handle OTP Verification
+   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
@@ -66,9 +65,7 @@ function OtpContent() {
     }
   };
 
-  // ===========================
-  // 🔁 Handle Resend OTP
-  // ===========================
+  // Handle Resend OTP
   const handleResend = async () => {
     if (cooldown > 0) return;
     setResending(true);
@@ -83,7 +80,7 @@ function OtpContent() {
 
       if (res.data.success) {
         toast.success("New OTP sent to your email!");
-        setCooldown(30); // ⏳ Disable button for 30s
+        setCooldown(30); // Disable button for 30s
       } else {
         toast.error(res.data.message || "Failed to resend OTP");
       }
@@ -94,9 +91,7 @@ function OtpContent() {
     }
   };
 
-  // ===========================
-  // 🧱 UI
-  // ===========================
+  // UI
   return (
     <div className="bg-gray-100 flex items-center justify-center h-screen p-4">
       <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-md">
@@ -139,7 +134,7 @@ function OtpContent() {
           </button>
         </form>
 
-        {/* 🔁 Resend OTP Section */}
+        {/*  Resend OTP Section */}
         <div className="text-center mt-6">
           <button
             onClick={handleResend}

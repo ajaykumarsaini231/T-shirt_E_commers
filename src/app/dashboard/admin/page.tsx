@@ -5,8 +5,6 @@ import { Users, ShoppingBag, Layers, ClipboardList } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
-import { MdDashboard, MdCategory } from "react-icons/md";
-import { FaShoppingBag, FaTable, FaRegUser } from "react-icons/fa";
 
 function SidebarLink({ href, icon, children }: { href: string; icon: React.ReactNode; children: React.ReactNode }) {
   const router = useRouter();

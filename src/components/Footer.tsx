@@ -12,7 +12,7 @@ const Footer = () => {
         {/* Main Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 text-center sm:text-left">
           
-          {/* 1️⃣ Contact Info */}
+          {/* 1️ Contact Info */}
           <div>
             <div className="flex justify-center sm:justify-start mb-6">
               <Link href="/" className="inline-block">
@@ -39,7 +39,7 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* 2️⃣ About */}
+          {/* 2️ About */}
           <div>
             <h3 className="font-bold text-lg mb-4">About</h3>
             <ul className="space-y-2 text-sm">
@@ -51,7 +51,7 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* 3️⃣ My Account */}
+          {/* 3️ My Account */}
           <div>
             <h3 className="font-bold text-lg mb-4">My Account</h3>
             <ul className="space-y-2 text-sm">
@@ -63,7 +63,7 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* 4️⃣ App & Payments */}
+          {/* 4️ App & Payments */}
           <div>
             <h3 className="font-bold text-lg mb-4">Install App</h3>
             <p className="text-sm mb-4">From App Store or Google Play</p>

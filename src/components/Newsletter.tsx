@@ -24,13 +24,13 @@ export default function Newsletter() {
       const data = await res.json();
 
       if (res.ok) {
-        setStatus("✅ Subscribed successfully!");
+        setStatus("Subscribed successfully!");
         setEmail(""); // clear input
       } else {
-        setStatus(`❌ Error: ${data.error || "Something went wrong"}`);
+        setStatus(` Error: ${data.error || "Something went wrong"}`);
       }
     } catch (error) {
-      setStatus("❌ Could not connect to the server.");
+      setStatus(" Could not connect to the server.");
     } finally {
       setLoading(false);
     }

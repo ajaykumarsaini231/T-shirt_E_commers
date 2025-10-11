@@ -35,15 +35,15 @@ export default function ContactForm() {
       const data = await res.json();
 
       if (res.ok) {
-        setStatus("✅ Message sent successfully!");
+        setStatus("Message sent successfully!");
         setFormData({ name: "", email: "", subject: "", message: "" });
       } else {
         setStatus(
-          `❌ Error: ${data.errors ? data.errors.join(", ") : data.error || "Something went wrong"}`
+          ` Error: ${data.errors ? data.errors.join(", ") : data.error || "Something went wrong"}`
         );
       }
     } catch (error) {
-      setStatus("❌ Could not connect to the server.");
+      setStatus("Could not connect to the server.");
     } finally {
       setLoading(false);
     }

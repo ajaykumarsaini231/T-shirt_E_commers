@@ -6,10 +6,9 @@ import Link from "next/link";
 import axios from "axios";
 import Cookies from "js-cookie";
 import { AuthContext } from "@/app/context/Authprovider";
-import { jwtDecode } from "jwt-decode"; // ✅ correct import
-
+import { jwtDecode } from "jwt-decode"; 
 export interface User {
-  id?: string;          // ✅ add this line (optional makes it safer)
+  id?: string;         
   name: string;
   email: string;
   photoUrl?: string;
@@ -25,21 +24,21 @@ const SignInPage: React.FC = () => {
 
     // const router = useRouter();
 
-  // ✅ if token exists → redirect to /
+  // if token exists → redirect to /
   useEffect(() => {
     const token = Cookies.get("Authorization");
     if (token) {
-      router.replace("/"); // ✅ go home if logged in
+      router.replace("/"); // go home if logged in
     }
   }, [router]);
 
-  // 🔹 Handle input change
+  // Handle input change
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // 🔹 Handle form submit
+  //  Handle form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -53,24 +52,24 @@ const SignInPage: React.FC = () => {
   );
 
       if (res.data.success) {
-        // ✅ Decode token
+        // Decode token
         const decoded: any = jwtDecode(res.data.token);
         const userId = decoded.userId;
         const role = decoded.role || res.data.user?.role;
 
-        // ✅ Save token in cookie (for SSR access)
+        //  Save token in cookie (for SSR access)
         Cookies.set("Authorization", `Bearer ${res.data.token}`, {
           expires: 7,
           sameSite: "strict",
           secure: process.env.NODE_ENV === "production",
         });
 
-        // ✅ Save to localStorage for client-side
+        //  Save to localStorage for client-side
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("userId", userId);
         localStorage.setItem("role", role);
 
-        // ✅ Update global AuthContext
+        //  Update global AuthContext
         auth?.login(res.data.token, {
           id: userId,
           name: res.data.user.name,
@@ -80,7 +79,7 @@ const SignInPage: React.FC = () => {
             "https://placehold.co/100x100/6366f1/white?text=U",
         });
 
-        // ✅ Redirect based on role
+        // Redirect based on role
         if (role === "superadmin" || role === "admin") {
           window.location.href="/dashboard/admin";
         } else {
@@ -98,7 +97,7 @@ const SignInPage: React.FC = () => {
 
   return (
     <>
-      {/* 🌈 Hero Section */}
+      {/*  Hero Section */}
       <section
         className="w-full h-[50vh] flex flex-col items-center justify-center text-center text-white bg-cover bg-center"
         style={{
@@ -115,21 +114,21 @@ const SignInPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 🧾 Login Form */}
+      {/*  Login Form */}
       <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
         <div className="bg-white shadow-2xl rounded-3xl p-10 w-full max-w-md transition-all hover:scale-105">
           <h2 className="text-3xl font-extrabold text-center text-gray-800 mb-8">
             Login
           </h2>
 
-          {/* ❌ Error Message */}
+          {/*  Error Message */}
           {errorMsg && (
             <div className="mb-4 text-red-600 text-sm font-medium text-center animate-pulse">
               {errorMsg}
             </div>
           )}
 
-          {/* 🧩 Form */}
+          {/*  Form */}
           <form onSubmit={handleSubmit}>
             {/* Email */}
             <div className="mb-6">

@@ -16,11 +16,11 @@ const SignupPage: React.FC = () => {
 
     // const router = useRouter();
 
-  // ✅ if token exists → redirect to /
+  // if token exists → redirect to /
   useEffect(() => {
     const token = Cookies.get("Authorization");
     if (token) {
-      router.replace("/"); // ✅ go home if logged in
+      router.replace("/"); 
     }
   }, [router]);
   const generateStrongPassword = () => {
@@ -36,13 +36,13 @@ const SignupPage: React.FC = () => {
   const handlePasswordChange = (value: string) => {
     setFormData((prev) => ({ ...prev, password: value }));
 
-    // ✅ Suggest password only once when typing weak password
+    // Suggest password only once when typing weak password
     if (value.length > 0 && value.length < 8 && !suggestedPassword) {
       const newPassword = generateStrongPassword();
       setSuggestedPassword(newPassword);
     }
 
-    // ✅ Hide suggestion when password is strong or cleared
+    // Hide suggestion when password is strong or cleared
     if (value.length >= 8 || value.length === 0) {
       setSuggestedPassword("");
     }
@@ -163,10 +163,10 @@ const SignupPage: React.FC = () => {
                 className="w-full px-5 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
               />
 
-              {/* ✅ Show strong password suggestion */}
+              {/* Show strong password suggestion */}
               {suggestedPassword && (
                 <div className="mt-2 text-sm text-gray-600">
-                  💡 <span className="font-medium">Suggested strong password:</span>{" "}
+                 <span className="font-medium">Suggested strong password:</span>{" "}
                   <span
                     onClick={() =>
                       setFormData((prev) => ({ ...prev, password: suggestedPassword }))

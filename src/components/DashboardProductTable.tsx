@@ -110,7 +110,7 @@ const CreateProductModal: React.FC<CreateProductModalProps> = ({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload), // ⚠️ Convert payload to JSON string
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {

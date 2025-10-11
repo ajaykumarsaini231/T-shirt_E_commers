@@ -46,7 +46,7 @@ const CheckoutPage = () => {
       ? JSON.parse(localStorage.getItem("user") || "{}")
       : {};
 
-  // 🧾 Fetch Cart
+  //  Fetch Cart
   const fetchCart = async () => {
     try {
       if (!user.id) {
@@ -58,12 +58,12 @@ const CheckoutPage = () => {
       const data = await res.json();
       setCart(Array.isArray(data) ? data : data.cart || data.items || []);
     } catch (err) {
-      console.error("❌ Error fetching cart:", err);
+      console.error(" Error fetching cart:", err);
       toast.error("Failed to load cart");
     }
   };
 
-  // 🏠 Fetch Addresses (fixed)
+  //  Fetch Addresses 
   const fetchAddresses = async () => {
     try {
       if (!user.id) return;
@@ -80,17 +80,16 @@ const CheckoutPage = () => {
 
       const data = await res.json();
 
-      // ✅ Ensure addresses is always an array
       if (Array.isArray(data)) {
         setAddresses(data);
       } else if (Array.isArray(data.addresses)) {
         setAddresses(data.addresses);
       } else {
-        console.warn("⚠️ Unexpected address format:", data);
+        console.warn(" Unexpected address format:", data);
         setAddresses([]);
       }
     } catch (err) {
-      console.error("⚠️ Failed to load addresses:", err);
+      console.error(" Failed to load addresses:", err);
       setAddresses([]);
     }
   };
@@ -105,7 +104,7 @@ const CheckoutPage = () => {
     0
   );
 
-  // 📦 Select Address → Auto-fill
+  //  Select Address → Auto-fill
   const handleSelectAddress = (addr: Address | "new") => {
     if (addr === "new") {
       setSelectedAddressId(null);
@@ -137,7 +136,7 @@ const CheckoutPage = () => {
     }
   };
 
-  // 💾 Save Address
+  //  Save Address
   const handleSaveAddress = async () => {
     if (!user.id) {
       toast.error("Login required to save address");
@@ -220,10 +219,10 @@ const CheckoutPage = () => {
 
       await apiClient.delete(`/api/cart/clear/${user.id}`);
 
-      toast.success("🎉 Order placed successfully!");
+      toast.success(" Order placed successfully!");
       router.push("/thankyou");
     } catch (err) {
-      console.error("❌ Checkout failed:", err);
+      console.error("Checkout failed:", err);
       toast.error("Failed to complete order");
     } finally {
       setIsSubmitting(false);
@@ -235,7 +234,7 @@ const CheckoutPage = () => {
       <SectionTitle title="Checkout" path="Home | Cart | Checkout" />
 
       <main className="mx-auto max-w-7xl px-4 py-10 grid grid-cols-1 lg:grid-cols-2 gap-12">
-        {/* 🛒 Order Summary */}
+        {/* Order Summary */}
         <div>
           <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
           <div className="bg-gray-50 p-6 rounded-lg shadow">
@@ -279,7 +278,7 @@ const CheckoutPage = () => {
           </div>
         </div>
 
-        {/* 📍 Address & Shipping */}
+        {/*  Address & Shipping */}
         <div>
           <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
 
@@ -299,7 +298,7 @@ const CheckoutPage = () => {
                   <p className="font-medium">{addr.name} {addr.lastname}</p>
                   <p className="text-sm text-gray-600">{addr.address}</p>
                   <p className="text-sm text-gray-600">{addr.city}, {addr.country}</p>
-                  <p className="text-sm text-gray-600">📞 {addr.phone}</p>
+                  <p className="text-sm text-gray-600"> {addr.phone}</p>
                 </div>
               ))
             ) : (

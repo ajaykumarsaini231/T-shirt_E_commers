@@ -23,17 +23,17 @@ export default function ThankYouPage() {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="text-center px-4"
       >
-        {/* 🎉 Thank You Title */}
+        {/*  Thank You Title */}
         <motion.h1
           initial={{ y: -30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.6 }}
           className="text-4xl sm:text-5xl font-extrabold text-indigo-700 mb-3"
         >
-          🎉 Thank You for Your Purchase!
+           Thank You for Your Purchase!
         </motion.h1>
 
-        {/* ✨ Stylish tagline */}
+        {/*  Stylish tagline */}
         <motion.p
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -43,7 +43,7 @@ export default function ThankYouPage() {
           “Because one good choice deserves another 💫”
         </motion.p>
 
-        {/* 🛍️ Bouncing icon */}
+        {/* Bouncing icon */}
         <motion.div
           animate={{ y: [0, -10, 0] }}
           transition={{ repeat: Infinity, duration: 1.5 }}
@@ -52,7 +52,7 @@ export default function ThankYouPage() {
           🛍️
         </motion.div>
 
-        {/* ⏳ Redirect message */}
+        {/* Redirect message */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

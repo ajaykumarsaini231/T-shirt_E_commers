@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import apiClient from "@/lib/api";
-import toast from "react-hot-toast"; // optional, replace if you use another toast
+import toast from "react-hot-toast"; 
 import Image from "next/image";
 
 /* -------------------------
@@ -35,7 +35,7 @@ interface Address {
   country: string;
   postalCode: string;
   phone: string;
-  company?: string; // ✅ add this
+  company?: string; 
   orderNotice: string;
 }
 
@@ -423,7 +423,7 @@ console.log(orderPayload)
     className="border rounded px-3 py-2"
   />
 
-  {/* 🟢 Company is optional now */}
+  {/* Company is optional now */}
   <input
     placeholder="Company (optional)"
     value={(addressForm as any).company || ""}
@@ -439,7 +439,7 @@ console.log(orderPayload)
     className="border rounded px-3 py-2 md:col-span-2"
   />
 
-  {/* 🟢 Apartment is optional now */}
+  {/* Apartment is optional now */}
   <input
     placeholder="Apartment / suite (optional)"
     value={addressForm.apartment || ""}

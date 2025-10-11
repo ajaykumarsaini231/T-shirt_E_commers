@@ -9,10 +9,10 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // 🔒 Step 1: Check admin authorization on the server
+  // Step 1: Check admin authorization on the server
   await requireAdmin();
 
-  // ✅ Step 2: Render the layout
+  // Step 2: Render the layout
   return (
     <div className="flex bg-gray-50 min-h-screen">
       {/* Sidebar is a client component */}

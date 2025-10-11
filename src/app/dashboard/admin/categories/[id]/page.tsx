@@ -25,7 +25,7 @@ function CategoryProductsManager({ categoryId }: { categoryId: string }) {
   const toggleFAQ = (key: "in" | "out") =>
     setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  // ✅ Fetch products split by category
+  // Fetch products split by category
   useEffect(() => {
     fetchSplitProducts();
   }, [categoryId]);
@@ -52,7 +52,7 @@ function CategoryProductsManager({ categoryId }: { categoryId: string }) {
     setFn(updated);
   };
 
-  // ✅ Move products (add/remove)
+  //  Move products (add/remove)
   const moveProducts = async (type: "remove" | "add") => {
     setLoading(true);
     try {
@@ -76,7 +76,7 @@ function CategoryProductsManager({ categoryId }: { categoryId: string }) {
         },
         {
           headers: {
-            Authorization: `Bearer ${token}`, // ✅ Must send token
+            Authorization: `Bearer ${token}`, // Must send token
           },
         }
       );
@@ -97,7 +97,7 @@ function CategoryProductsManager({ categoryId }: { categoryId: string }) {
     }
   };
 
-  // ✅ Inner reusable table
+  // Inner reusable table
   const ProductTable = ({
     products,
     selectedSet,
@@ -164,7 +164,7 @@ function CategoryProductsManager({ categoryId }: { categoryId: string }) {
 
   return (
     <div className="space-y-6 mt-6">
-      {/* ✅ Section 1: Products in Category */}
+      {/* Section 1: Products in Category */}
       <div className="border rounded-lg">
         <button
           onClick={() => toggleFAQ("in")}
@@ -200,7 +200,7 @@ function CategoryProductsManager({ categoryId }: { categoryId: string }) {
         )}
       </div>
 
-      {/* ✅ Section 2: Other Products */}
+      {/*  Section 2: Other Products */}
       <div className="border rounded-lg">
         <button
           onClick={() => toggleFAQ("out")}
@@ -253,14 +253,14 @@ const DashboardSingleCategory = ({ params }: DashboardSingleCategoryProps) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isUpdatingName, setIsUpdatingName] = useState(false);
 
-  // ✅ Fetch category info
+  // Fetch category info
   useEffect(() => {
     const token = localStorage.getItem("token");
 
     apiClient
       .get(`/api/categories/${categoryId}`, {
         headers: {
-          Authorization: `Bearer ${token}`, // send token in header
+          Authorization: `Bearer ${token}`, 
         },
       })
       .then((res) => res.json())
@@ -268,7 +268,7 @@ const DashboardSingleCategory = ({ params }: DashboardSingleCategoryProps) => {
       .catch(() => toast.error("Failed to load category"));
   }, [categoryId]);
 
-  // ✅ Update category name
+  //  Update category name
   const updateCategoryName = async () => {
     if (!categoryName.trim()) return toast.error("Category name required");
     setIsUpdatingName(true);
@@ -276,9 +276,9 @@ const DashboardSingleCategory = ({ params }: DashboardSingleCategoryProps) => {
       const token = localStorage.getItem("token");
       const res = await apiClient.put(
         `/api/categories/${categoryId}`,
-        { name: categoryName }, // ✅ Request body
+        { name: categoryName }, 
         {
-          headers: { Authorization: `Bearer ${token}` }, // ✅ Headers go here
+          headers: { Authorization: `Bearer ${token}` }, 
         }
       );
       if (res.status === 200) toast.success("Category name updated");
@@ -290,14 +290,14 @@ const DashboardSingleCategory = ({ params }: DashboardSingleCategoryProps) => {
     }
   };
 
-  // ✅ Delete category
+  //  Delete category
   const deleteCategory = async () => {
     if (!confirm("Are you sure you want to delete this category?")) return;
     setIsDeleting(true);
     try {
       const token = localStorage.getItem("token");
       const res = await apiClient.put(`/api/categories/${categoryId}`, {
-        headers: { Authorization: `Bearer ${token}` }, // ✅ Headers go here
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 204) {
         toast.success("Category deleted");
@@ -347,7 +347,7 @@ const DashboardSingleCategory = ({ params }: DashboardSingleCategoryProps) => {
           </button>
         </div>
 
-        {/* ✅ Products Management Component */}
+        {/*Products Management Component */}
         <CategoryProductsManager categoryId={categoryId} />
       </div>
     </div>

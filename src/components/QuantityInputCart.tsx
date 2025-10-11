@@ -5,7 +5,7 @@ import { FaPlus, FaMinus } from "react-icons/fa6";
 
 const QuantityInputCart = ({ product }: { product: ProductInCart }) => {
   const [quantityCount, setQuantityCount] = useState<number>(product.amount);
-  const { updateCartAmount } = useProductStore(); // 🧩 removed calculateTotals
+  const { updateCartAmount } = useProductStore();
 
   const handleQuantityChange = (actionName: string): void => {
     if (actionName === "plus") {

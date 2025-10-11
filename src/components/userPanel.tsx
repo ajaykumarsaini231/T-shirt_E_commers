@@ -10,7 +10,7 @@ type User = {
   name: string;
   email?: string;
   avatar?: string;
-  photoUrl?: string; // ✅ Add this line
+  photoUrl?: string; 
 };
 
 
@@ -25,7 +25,7 @@ export default function UserPanel({ user, isOpen, onClose }: UserPanelProps) {
 
 const handleLogout = async () => {
   try {
-    // 🔹 Call backend to invalidate session (optional but good)
+    // Call backend to invalidate session (optional but good)
     await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/signout`, {
       method: "POST",
       headers: {
@@ -34,35 +34,27 @@ const handleLogout = async () => {
       },
     });
 
-    // 🔹 Clear all app-related data
+    //  Clear all app-related data
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("userId");
     localStorage.removeItem("cart");
     localStorage.removeItem("wishlist");
     localStorage.removeItem("checkoutData");
-
-    // 🔹 Optional: clear session storage too
     sessionStorage.clear();
-
-    // 🔹 Optional: if you use cookies for auth
     document.cookie.split(";").forEach((c) => {
       document.cookie = c
         .replace(/^ +/, "")
         .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
     });
-
-    // 🔹 Optional: full site data reset
     localStorage.clear();
 
     toast.success("Logged out successfully!");
-    
-    // 🔹 Redirect after a short delay
     setTimeout(() => {
       window.location.href = "/login";
     }, 800);
   } catch (error) {
-    console.error("❌ Logout failed:", error);
+    console.error(" Logout failed:", error);
     toast.error("Logout failed, please try again!");
   }
 };
@@ -75,7 +67,7 @@ const handleLogout = async () => {
       {/* Background overlay */}
       <div
         className="absolute inset-0 bg-black/40"
-        onClick={onClose} // ✅ click outside closes
+        onClick={onClose} // click outside closes
       ></div>
 
       {/* Sidebar */}
@@ -107,7 +99,7 @@ const handleLogout = async () => {
         <div className="mt-8 flex flex-col gap-3">
           <button
             onClick={() => {
-              onClose(); // ✅ close panel
+              onClose(); // close panel
               router.push("/profile");
             }}
             className="w-full py-2 bg-indigo-600 text-white rounded-md font-semibold hover:bg-indigo-700"
