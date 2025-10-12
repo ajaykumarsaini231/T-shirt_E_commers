@@ -129,7 +129,7 @@ cd dreamora-frontend
 npm install
 ```
 
-### 3. Configure Environment Variables
+## Environment Variables
 
 Create a `.env.local` file in your root folder:
 
