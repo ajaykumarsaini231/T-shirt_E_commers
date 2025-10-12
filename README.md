@@ -1,7 +1,15 @@
 
 
 # Dreamora Frontend – Next.js E-Commerce Platform
-<img width="2048" height="2048" alt="image" src="https://github.com/user-attachments/assets/090360a0-8ef5-4a40-bcd5-4e6ca3454f6e" />
+
+> **Live on [https://client-delta-brown.vercel.app/](https://client-delta-brown.vercel.app/)**
+
+
+_Shop smarter, live better. Discover the future of online shopping with Dreamora._
+
+--
+
+<img width="2048" height="2048" alt="image" src="https://github.com/user-attachments/assets/faa6456f-a234-4e1b-938f-ca45e06e1416" />
 
 
 ---
