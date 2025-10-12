@@ -4,6 +4,8 @@
 
 > **Live on [https://client-delta-brown.vercel.app/](https://client-delta-brown.vercel.app/)**
 
+> **Backend Live API on: [https://server-qfd2.onrender.com](https://server-qfd2.onrender.com)**
+> **Backend Repo:** [https://github.com/ajaykumarsaini231/server](https://github.com/ajaykumarsaini231/server)
 
 _Shop smarter, live better. Discover the future of online shopping with Dreamora._
 
