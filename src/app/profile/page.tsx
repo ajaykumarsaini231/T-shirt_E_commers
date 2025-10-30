@@ -16,6 +16,10 @@ import WishlistPage from "../wishlist/page";
 import toast from "react-hot-toast"; 
 import { useRouter } from "next/navigation";
 import apiClient from "@/lib/api";
+import  { use } from "react";
+import { isValidEmailAddressFormat } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 
 // --- MOCK DATA  ---
 
@@ -686,190 +690,634 @@ interface User {
 }
 
 
+// const AccountDetailsContent = () => {
+//   const [loading, setLoading] = useState(true);
+//   const [updatingProfile, setUpdatingProfile] = useState(false);
+//   const [updatingPassword, setUpdatingPassword] = useState(false);
+//   const [user, setUser] = useState<any>(null);
+//   const [formData, setFormData] = useState({
+//     name: "",
+//     email: "",
+//     photoUrl: "",
+//     currentPassword: "",
+//     newPassword: "",
+//   });
+
+//   useEffect(() => {
+//     const fetchUser = async () => {
+//       const token = localStorage.getItem("token");
+
+//       try {
+//         const res = await apiClient.get("/api/users/me", {
+//   headers: { Authorization: `Bearer ${token}` }
+// });
+        
+//         const data = await res.json();
+//         if (!data?.success || !data.user) {
+//           toast.error("Failed to load account details");
+//           return;
+//         }
+//         setUser(data.user);
+//         setFormData({
+//           name: data.user.name || "",
+//           email: data.user.email || "",
+//           photoUrl: data.user.photoUrl || "",
+//           currentPassword: "",
+//           newPassword: "",
+//         });
+//       } catch {
+//         toast.error("Failed to load account details");
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+//     fetchUser();
+//   }, []);
+
+//   const handleProfileUpdate = async (e: React.FormEvent) => {
+//     e.preventDefault();
+//     if (
+//       formData.name === user?.name &&
+//       formData.photoUrl === (user?.photoUrl || "")
+//     ) {
+//       toast("No profile changes to update");
+//       return;
+//     }
+//     setUpdatingProfile(true);
+//     try {
+//       const res = await apiClient.put(`/api/users/me`, {
+//         name: formData.name,
+//         photoUrl: formData.photoUrl,
+//       });
+//       const data = await res.json();
+//       if (res.ok && data.success) {
+//         setUser(data.user);
+//         setFormData({
+//           ...formData,
+//           name: data.user.name,
+//           photoUrl: data.user.photoUrl,
+//         });
+//         toast.success("Profile updated successfully");
+//       } else {
+//         toast.error(data.message || "Failed to update profile");
+//       }
+//     } catch {
+//       toast.error("Error updating profile");
+//     } finally {
+//       setUpdatingProfile(false);
+//     }
+//   };
+
+//   const handlePasswordUpdate = async (e: React.FormEvent) => {
+//     e.preventDefault();
+//     if (!formData.currentPassword || !formData.newPassword) {
+//       toast.error("Please enter both current and new passwords");
+//       return;
+//     }
+//     setUpdatingPassword(true);
+//     try {
+//       const res = await apiClient.put(`/api/users/me`, {
+//         currentPassword: formData.currentPassword,
+//         newPassword: formData.newPassword,
+//       });
+//       const data = await res.json();
+//       if (res.ok && data.success) {
+//         toast.success("Password updated successfully");
+//         setFormData({
+//           ...formData,
+//           currentPassword: "",
+//           newPassword: "",
+//         });
+//       } else {
+//         toast.error(data.message || "Failed to update password");
+//       }
+//     } catch {
+//       toast.error("Error updating password");
+//     } finally {
+//       setUpdatingPassword(false);
+//     }
+//   };
+
+//   if (loading)
+//     return (
+//       <div className="flex justify-center items-center min-h-[50vh] text-gray-600">
+//         Loading account details...
+//       </div>
+//     );
+
+//   return (
+//     <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-xl p-8 border border-gray-100">
+//       <h2 className="text-3xl font-extrabold text-gray-900 mb-6 border-b pb-4">
+//         Account Details
+//       </h2>
+//       <form onSubmit={handleProfileUpdate} className="space-y-8 mb-10">
+//         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//           <div>
+//             <label
+//               htmlFor="name"
+//               className="block text-sm font-semibold text-gray-700 mb-2"
+//             >
+//               Full Name
+//             </label>
+//             <input
+//               type="text"
+//               id="name"
+//               value={formData.name}
+//               onChange={(e) =>
+//                 setFormData({ ...formData, name: e.target.value })
+//               }
+//               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+//               placeholder="Enter your name"
+//             />
+//           </div>
+//           <div>
+//             <label
+//               htmlFor="email"
+//               className="block text-sm font-semibold text-gray-700 mb-2"
+//             >
+//               Email Address
+//             </label>
+//             <input
+//               type="email"
+//               id="email"
+//               value={formData.email}
+//               readOnly
+//               className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+//             />
+//             <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
+//           </div>
+//         </div>
+//         <div>
+//           <label
+//             htmlFor="photoUrl"
+//             className="block text-sm font-semibold text-gray-700 mb-2"
+//           >
+//             Profile Photo URL
+//           </label>
+//           <input
+//             type="text"
+//             id="photoUrl"
+//             value={formData.photoUrl}
+//             onChange={(e) =>
+//               setFormData({ ...formData, photoUrl: e.target.value })
+//             }
+//             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+//             placeholder="Enter image URL"
+//           />
+//           {formData.photoUrl && (
+//             <div className="mt-4 flex items-center gap-4">
+//               <img
+//                 src={formData.photoUrl}
+//                 alt="Profile Preview"
+//                 className="w-16 h-16 rounded-full border object-cover"
+//               />
+//               <p className="text-sm text-gray-500">Preview</p>
+//             </div>
+//           )}
+//         </div>
+//         <div className="flex justify-end">
+//           <button
+//             type="submit"
+//             disabled={updatingProfile}
+//             className={`px-6 py-3 rounded-lg font-semibold text-white shadow-md transition-all duration-200 ${
+//               updatingProfile
+//                 ? "bg-indigo-400 cursor-not-allowed"
+//                 : "bg-indigo-600 hover:bg-indigo-700"
+//             }`}
+//           >
+//             {updatingProfile ? "Saving..." : "Save Profile"}
+//           </button>
+//         </div>
+//       </form>
+//       <form onSubmit={handlePasswordUpdate} className="space-y-8">
+//         <h3 className="text-lg font-semibold border-b pb-2 mb-4 text-gray-800">
+//           Change Password
+//         </h3>
+//         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//           <div>
+//             <label
+//               htmlFor="currentPassword"
+//               className="block text-sm font-semibold text-gray-700 mb-2"
+//             >
+//               Current Password
+//             </label>
+//             <input
+//               type="password"
+//               id="currentPassword"
+//               value={formData.currentPassword}
+//               onChange={(e) =>
+//                 setFormData({ ...formData, currentPassword: e.target.value })
+//               }
+//               placeholder="••••••••"
+//               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+//             />
+//           </div>
+//           <div>
+//             <label
+//               htmlFor="newPassword"
+//               className="block text-sm font-semibold text-gray-700 mb-2"
+//             >
+//               New Password
+//             </label>
+//             <input
+//               type="password"
+//               id="newPassword"
+//               value={formData.newPassword}
+//               onChange={(e) =>
+//                 setFormData({ ...formData, newPassword: e.target.value })
+//               }
+//               placeholder="••••••••"
+//               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+//             />
+//           </div>
+//         </div>
+//         <div className="flex justify-end">
+//           <button
+//             type="submit"
+//             disabled={updatingPassword}
+//             className={`px-6 py-3 rounded-lg font-semibold text-white shadow-md transition-all duration-200 ${
+//               updatingPassword
+//                 ? "bg-indigo-400 cursor-not-allowed"
+//                 : "bg-indigo-600 hover:bg-indigo-700"
+//             }`}
+//           >
+//             {updatingPassword ? "Updating..." : "Change Password"}
+//           </button>
+//         </div>
+//       </form>
+//     </div>
+//   );
+// };
+
+
+
+
+interface UserData {
+  id: string;
+  name?: string;
+  email: string;
+  role: string;
+  verified?: boolean;
+  photoUrl?: string;
+  addresses?: any[];
+  Wishlist?: any[];
+  Cart?: any[];
+  orders?: any[];
+}
+
+
 const AccountDetailsContent = () => {
+  const router = useRouter();
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserData | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [confirmInput, setConfirmInput] = useState("");
 
-  const [formData, setFormData] = useState({
+  const [userInput, setUserInput] = useState({
     name: "",
     email: "",
     currentPassword: "",
     newPassword: "",
+    role: "",
+    photoUrl: "",
+    verified: false,
   });
 
-  //  Fetch logged-in user data
+  useEffect(() => {
+    const storedId = localStorage.getItem("userId");
+    if (storedId) {
+      setUserId(storedId);
+    } else {
+      toast.error("User ID not found in localStorage");
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const res = await apiClient.get("/api/users/me");
+        const token = localStorage.getItem("token");
+        if (!token) {
+          toast.error("User not logged in");
+          setLoading(false);
+          return;
+        }
+
+        const res = await apiClient.get("/api/users/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
         const data = await res.json();
-        setUser(data);
-        setFormData({
-          name: data.name || "",
-          email: data.email || "",
+        setUser(data.user);
+        setUserInput({
+          name: data.user.name || "",
+          email: data.user.email || "",
           currentPassword: "",
           newPassword: "",
+          role: data.user.role || "",
+          photoUrl: data.user.photoUrl || "",
+          verified: data.user.verified || false,
         });
       } catch (err) {
-        toast.error("Failed to load account details");
+        console.error("Error fetching user:", err);
+        toast.error("Failed to load user data");
       } finally {
         setLoading(false);
       }
     };
+
     fetchUser();
   }, []);
 
-  //  Handle update submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const updateUser = async () => {
+    if (!isValidEmailAddressFormat(userInput.email)) {
+      toast.error("Invalid email address format", { position: "bottom-right" });
+      return;
+    }
+
+    if (
+      (userInput.currentPassword && !userInput.newPassword) ||
+      (!userInput.currentPassword && userInput.newPassword)
+    ) {
+      toast.error("Please enter both current and new password", {
+        position: "bottom-right",
+      });
+      return;
+    }
+
     setUpdating(true);
 
     try {
-      const res = await apiClient.put("/api/users/me", {
-        name: formData.name,
-        currentPassword: formData.currentPassword || undefined,
-        newPassword: formData.newPassword || undefined,
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("User not logged in", { position: "bottom-right" });
+        return;
+      }
+
+      const payload = {
+        name: userInput.name,
+        email: userInput.email,
+        photoUrl: userInput.photoUrl,
+        verified: userInput.verified,
+        role: userInput.role,
+        currentPassword: userInput.currentPassword || undefined,
+        newPassword: userInput.newPassword || undefined,
+      };
+
+      const response = await apiClient.put("/api/users/me", payload, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (res.status === 200) {
-        toast.success("Account updated successfully");
-        const updated = await res.json();
-        setUser(updated);
-        setFormData({
-          ...formData,
+      if (response.status === 200) {
+        const data = await response.json();
+        toast.success("Profile updated successfully ✅", {
+          position: "bottom-right",
+        });
+        setUser(data.user);
+        setUserInput({
+          ...userInput,
           currentPassword: "",
           newPassword: "",
         });
+        setTimeout(() => window.location.reload(), 1000);
       } else {
-        const err = await res.json();
-        toast.error(err.message || "Failed to update account");
+        const err = await response.json();
+        toast.error(err.message || "Failed to update user", {
+          position: "bottom-right",
+        });
       }
-    } catch {
-      toast.error("Error updating account");
+    } catch (err: any) {
+      const errorMessage =
+        err?.response?.data?.message || err.message || "Error updating user";
+      toast.error(errorMessage, { position: "bottom-right" });
     } finally {
       setUpdating(false);
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        toast.error("User not logged in");
+        return;
+      }
+
+      const res = await apiClient.delete("/api/users/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.status === 204) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("cart");
+      localStorage.removeItem("wishlist");
+      localStorage.removeItem("checkoutData");
+      sessionStorage.clear();
+      document.cookie.split(";").forEach((c) => {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+      localStorage.clear();
+      toast.success("User deleted successfully");
+        setTimeout(() => {
+          window.location.href = "/";
+          window.location.reload();
+        }, 1000);
+      } else {
+        const data = await res.json();
+        toast.error(data.message || "Error deleting user");
+      }
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast.error("Error deleting user");
+    }
+  };
+
   if (loading)
     return (
-      <div className="flex justify-center items-center min-h-[50vh] text-gray-600">
-        Loading account details...
+      <div className="flex items-center justify-center min-h-screen text-gray-600">
+        Loading user details...
+      </div>
+    );
+
+  if (!user)
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-600">
+        User not found.
       </div>
     );
 
   return (
-    <div className="max-w-3xl mx-auto bg-white shadow-lg rounded-xl p-8 border border-gray-100">
-      <h2 className="text-3xl font-extrabold text-gray-900 mb-6 border-b pb-4">
-        Account Details
-      </h2>
+    <div className="bg-neutral-50 min-h-screen flex justify-start max-w-screen-2xl mx-auto xl:h-full max-xl:flex-col max-xl:gap-y-6 p-6 rounded-lg shadow-md">
+      <div className="flex flex-col gap-y-8 xl:pl-8 max-xl:px-6 w-full max-w-5xl mx-auto">
+        <h1 className="text-4xl font-extrabold text-gray-900 border-b border-gray-300 pb-4">
+          Manage User
+        </h1>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Profile Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {userInput.photoUrl && (
+          <img
+            src={userInput.photoUrl}
+            alt="User Avatar"
+            className="w-24 h-24 rounded-full object-cover border shadow-md"
+          />
+        )}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-white p-6 rounded-lg shadow-md">
           <div>
-            <label
-              htmlFor="name"
-              className="block text-sm font-semibold text-gray-700 mb-2"
-            >
-              Full Name
+            <label className="block mb-2 font-semibold text-gray-700">Name</label>
+            <input
+              type="text"
+              className="w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              placeholder="Full name"
+              value={userInput.name}
+              onChange={(e) =>
+                setUserInput({ ...userInput, name: e.target.value })
+              }
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 font-semibold text-gray-700">Email</label>
+            <input
+              type="email"
+              className="w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              placeholder="Email address"
+              value={userInput.email}
+              readOnly
+            />
+          </div>
+
+          {/* 🔹 Current Password */}
+          <div>
+            <label className="block mb-2 font-semibold text-gray-700">
+              Current Password
+            </label>
+            <input
+              type="password"
+              className="w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              placeholder="Enter current password"
+              value={userInput.currentPassword}
+              onChange={(e) =>
+                setUserInput({ ...userInput, currentPassword: e.target.value })
+              }
+            />
+          </div>
+
+          {/* 🔹 New Password */}
+          <div>
+            <label className="block mb-2 font-semibold text-gray-700">
+              New Password
+            </label>
+            <input
+              type="password"
+              className="w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              placeholder="Enter new password"
+              value={userInput.newPassword}
+              onChange={(e) =>
+                setUserInput({ ...userInput, newPassword: e.target.value })
+              }
+            />
+          </div>
+
+          <div>
+            <label className="block mb-2 font-semibold text-gray-700">
+              Profile Photo URL
             </label>
             <input
               type="text"
-              id="name"
-              value={formData.name}
+              className="w-full px-4 py-3 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              placeholder="Enter photo URL"
+              value={userInput.photoUrl}
               onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
+                setUserInput({ ...userInput, photoUrl: e.target.value })
               }
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              placeholder="Enter your name"
             />
-          </div>
-
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-semibold text-gray-700 mb-2"
-            >
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={formData.email}
-              disabled
-              className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Email cannot be changed
-            </p>
           </div>
         </div>
 
-        {/* Password Section */}
-        <div>
-          <h3 className="text-lg font-semibold border-b pb-2 mb-4 text-gray-800">
-            Change Password
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label
-                htmlFor="currentPassword"
-                className="block text-sm font-semibold text-gray-700 mb-2"
-              >
-                Current Password
-              </label>
-              <input
-                type="password"
-                id="currentPassword"
-                value={formData.currentPassword}
-                onChange={(e) =>
-                  setFormData({ ...formData, currentPassword: e.target.value })
-                }
-                placeholder="••••••••"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="newPassword"
-                className="block text-sm font-semibold text-gray-700 mb-2"
-              >
-                New Password
-              </label>
-              <input
-                type="password"
-                id="newPassword"
-                value={formData.newPassword}
-                onChange={(e) =>
-                  setFormData({ ...formData, newPassword: e.target.value })
-                }
-                placeholder="••••••••"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Submit Button */}
-        <div className="flex justify-end">
+        <div className="flex gap-4 max-sm:flex-col">
           <button
-            type="submit"
+            onClick={updateUser}
             disabled={updating}
-            className={`px-6 py-3 rounded-lg font-semibold text-white shadow-md transition-all duration-200 ${
+            className={`w-full text-white font-semibold py-3 rounded-md shadow-md transition ${
               updating
                 ? "bg-indigo-400 cursor-not-allowed"
                 : "bg-indigo-600 hover:bg-indigo-700"
             }`}
           >
-            {updating ? "Saving..." : "Save Changes"}
+            {updating ? "Updating..." : "Save Changes"}
+          </button>
+
+          <button
+            onClick={() => setConfirmDeleteOpen(true)}
+            className="w-full bg-red-600 text-white font-semibold py-3 rounded-md shadow-md hover:bg-red-700 transition"
+          >
+            Delete Account
           </button>
         </div>
-      </form>
+
+        {confirmDeleteOpen && (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                Confirm Delete
+              </h2>
+              <p className="text-gray-700 mb-4">
+                To confirm deletion, type{" "}
+                <span className="font-semibold text-red-600">
+                  "{user?.name} delete"
+                </span>{" "}
+                below.
+              </p>
+
+              <input
+                type="text"
+                value={confirmInput}
+                onChange={(e) => setConfirmInput(e.target.value)}
+                className="w-full border px-4 py-2 rounded-md focus:ring-2 focus:ring-red-500 focus:outline-none mb-6"
+                placeholder={`Type "${user?.name} delete"`}
+              />
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    setConfirmInput("");
+                    setConfirmDeleteOpen(false);
+                  }}
+                  className="px-4 py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={handleDeleteConfirm}
+                  disabled={confirmInput !== `${user?.name} delete`}
+                  className={`px-4 py-2 rounded-md text-white font-semibold shadow-md ${
+                    confirmInput === `${user?.name} delete`
+                      ? "bg-red-600 hover:bg-red-700"
+                      : "bg-red-400 cursor-not-allowed"
+                  }`}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
+
+
+
+
+
 
 
 // --- MAIN PROFILE PAGE COMPONENT ---
@@ -975,7 +1423,7 @@ ordersData.orders.forEach((order: any) => {
     id: "",
     name: "",
     email: "",
-    photoUrl: "/default-avatar.png",
+    photoUrl: "",
   });
 
   useEffect(() => {
@@ -1057,9 +1505,7 @@ const NavLink: React.FC<NavLinkProps> = ({ tabName, icon: Icon, label }) => (
             <div className="bg-white p-4 rounded-lg border sticky top-24">
               <div className="flex items-center space-x-4 mb-5">
                 <img
-                  src={`${process.env.NEXT_PUBLIC_API_URL}${
-                    user.photoUrl || "/default-avatar.png"
-                  }`}
+                  src={user.photoUrl || "https://placehold.co/100x100/6366f1/white?text=U"}
                   alt="User Avatar"
                   className="w-16 h-16 rounded-full object-cover border"
                 />

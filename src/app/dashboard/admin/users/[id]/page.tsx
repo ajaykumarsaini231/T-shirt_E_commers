@@ -265,7 +265,7 @@ const DashboardSingleUserPage = ({ params }: DashboardUserDetailsProps) => {
               onChange={(e) =>
                 setUserInput({ ...userInput, verified: e.target.checked })
               }
-              className="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              className="h-5 w-5 text-indigo-600 border--300 rounded focus:ring-indigo-500"
             />
             <label className="font-semibold text-gray-700">Verified</label>
           </div>
